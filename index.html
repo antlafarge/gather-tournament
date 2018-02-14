@@ -12,9 +12,9 @@
 </head>
 <body ng-controller="MTG_Ctrl">
 
-<h1>MTG Tournament</h1>
+<!--<h1>MTG Tournament</h1>-->
 
-<h2>Players</h2>
+<h2>{{sortedPlayers.length}} Players</h2>
 
 <p>
 <table class="table table-bordered table-striped">
@@ -48,7 +48,7 @@
 			<td>{{computeOpponentGameWinPercent(player)}}</td>
 		</tr>
 	</tbody>
-	<thead>
+	<thead ng-show="roundCount == 0">
 		<tr>
 			<td colspan="11">
 				<div class="input-group mb-3">
@@ -63,7 +63,7 @@
 </table>
 </p>
 
-<h2>Rounds</h2>
+<h2>Round {{selectedRound + 1}} / {{computeNbRounds()}}</h2>
 
 <p>
 	<div class="form-group">

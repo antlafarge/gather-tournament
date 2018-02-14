@@ -9,20 +9,38 @@ MTG.controller("MTG_Ctrl", ["$scope",
 
 		var players = $scope.players = [];
 		$scope.sortedPlayers = [];
-
-		var roundCount = 0;
+		$scope.roundCount = 0;
 
 		$scope.selectedRound = 0;
 		$scope.playerNameToAdd = "";
 
 		$scope.roundCountRange = function()
 		{
-			return new Array(roundCount).fill(1).map((v, i) => i);
+			return new Array($scope.roundCount).fill(1).map((v, i) => i);
 		}
 
-		function sortPlayers(players)
+		function lowerPowerOfTwo(x)
 		{
-			return players.sort((p1, p2) => {
+			var i = 0;
+			var lastRes = 1;
+			var res = 1;
+			while (res < x)
+			{
+				i++;
+				lastRes = res;
+				res *= 2;
+			}
+			return i;
+		}
+
+		$scope.computeNbRounds = function()
+		{
+			return lowerPowerOfTwo(players.length);
+		}
+
+		function sortPlayers()
+		{
+			$scope.sortedPlayers = players.slice().sort((p1, p2) => {
 				// Match points
 				var PMP1 = $scope.computePlayerMatchPoints(p1);
 				var PMP2 = $scope.computePlayerMatchPoints(p2);
@@ -55,24 +73,34 @@ MTG.controller("MTG_Ctrl", ["$scope",
 					return (OGWP2 - OGWP1);
 				}
 
+				// Tie breaker 4
 				return (Math.random() > 0.5 ? 1 : -1);
 			});
 		}
 		
-		function findBye()
+		window.findBye = function findBye()
 		{
-			var byePlayer = players.reduceRight((previousValue, currentValue) => {
-				if (currentValue.byeCount < previousValue.byeCount)
+			var res = $scope.sortedPlayers.reduceRight((acc, player) => {
+				var playerByeCount = $scope.computeByeCount(player);
+				var playerMatchPoints = $scope.computePlayerMatchPoints(player);
+				if (playerByeCount < acc.minByeCount)
 				{
-					return currentValue;
+					acc.minByeCount = playerByeCount;
+					acc.minMatchPoints = playerMatchPoints;
+					acc.playersTiedToBye.length = 0;
 				}
-				else if (currentValue.byeCount == previousValue.byeCount)
+				if ((playerByeCount == acc.minByeCount) && (playerMatchPoints == acc.minMatchPoints))
 				{
-					return (Math.random() < 0.5 ? currentValue : previousValue);
+					acc.playersTiedToBye.push(player);
 				}
-				return previousValue;
+				return acc;
+			}, {
+				minByeCount: +Infinity,
+				minMatchPoints: +Infinity,
+				playersTiedToBye: []
 			});
-			return byePlayer;
+
+			return res.playersTiedToBye[Math.floor(Math.random() * res.playersTiedToBye.length)];
 		}
 	
 		function createPlayer(playerName)
@@ -275,30 +303,38 @@ MTG.controller("MTG_Ctrl", ["$scope",
 			return res.toFixed(4);
 		}
 
-		function createMatch(opponentName, bye)
+		function createMatch(opponentName, isBye)
 		{
 			return {
 				"opponent": opponentName,
-				"bye": bye,
+				"bye": isBye,
 				"finished": false,
 				"myGames": 0,
 				"opponentGames": 0
 			};
 		}
 
-		var newRound = $scope.newRound = function()
+		$scope.newRound = function()
 		{
-			console.log("New round", roundCount);
+			if (players.length < 2)
+			{
+				return;
+			}
 
-			$scope.sortedPlayers = sortPlayers(players.slice());
+			if ($scope.roundCount >= $scope.computeNbRounds())
+			{
+				return;
+			}
+
+			console.log("New round", $scope.roundCount);
+
+			sortPlayers();
 
 			if ($scope.sortedPlayers.length % 2)
 			{
 				var byePlayer = findBye();
 
-				byePlayer.byeCount++;
-
-				byePlayer.matches[roundCount] = createMatch("", true, 0, 0);
+				byePlayer.matches[$scope.roundCount] = createMatch("", true, 0, 0);
 
 				console.log("bye", byePlayer.name);
 			}
@@ -306,32 +342,90 @@ MTG.controller("MTG_Ctrl", ["$scope",
 			for (var i = 0; i < $scope.sortedPlayers.length; i++)
 			{
 				var p = $scope.sortedPlayers[i];
-				if (p.matches[roundCount])
+				console.log("p", p);
+				if (p.matches[$scope.roundCount])
 				{
+					console.log("has already a match");
 					continue;
 				}
 				var o = null;
+				var found = false;
 				for (var j = i + 1; j < $scope.sortedPlayers.length; j++)
 				{
-					o = $scope.sortedPlayers[j]
-					if (o.matches[roundCount])
+					o = $scope.sortedPlayers[j];
+					console.log("o", o);
+					if (o.matches[$scope.roundCount] || checkForAlreadyPlayedGames(p, o))
 					{
+						if (o.matches[$scope.roundCount])
+						{
+							console.log("has already a match");
+						}
+						else if (checkForAlreadyPlayedGames(p, o))
+						{
+							console.log("already played against this opponent");
+						}
 						continue;
 					}
+					p.matches[$scope.roundCount] = createMatch(o.name, false);
+					o.matches[$scope.roundCount] = createMatch(p.name, false);
+					found = true;
 					break;
 				}
-				p.matches[roundCount] = createMatch(o.name, false);
-				o.matches[roundCount] = createMatch(p.name, false);
+
+				if (!found)
+				{
+					throw "Opponent not found";
+				}
+
 				console.log(p.name, "vs", o.name);
 			}
 
-			$scope.selectedRound = roundCount;
-			roundCount++;
+			$scope.selectedRound = $scope.roundCount;
+			$scope.roundCount++;
 
 			save();
 		}
 
-		var updateScore = $scope.updateScore = function(match)
+		$scope.cancelLastRound = function()
+		{
+			if (!confirm("You will CANCEL THE LAST ROUND matches. Are you sure?"))
+			{
+				return;
+			}
+
+			if ($scope.roundCount <= 0)
+			{
+				return;
+			}
+
+			$scope.roundCount--;
+			$scope.selectedRound = $scope.roundCount;
+
+			for (var i = 0; i < players.length; i++)
+			{
+				var p = players[i];
+				delete p.matches.splice($scope.roundCount, 1);
+			}
+
+			sortPlayers();
+
+			save();
+		}
+
+		function checkForAlreadyPlayedGames(p1, p2)
+		{
+			for (var i = 0; i < p1.matches.length; i++)
+			{
+				var m = p1.matches[i];
+				if (m.opponent == p2.name)
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+
+		$scope.updateScore = function(match)
 		{
 			var opponent = searchForAPlayer(match.opponent);
 			if (opponent)
@@ -344,19 +438,40 @@ MTG.controller("MTG_Ctrl", ["$scope",
 			save();
 		}
 
-		var reset = $scope.reset = function()
+		$scope.reset = function()
 		{
-			roundCount = 0;
+			if (!confirm("You will RESET ALL DATA. Are you sure?"))
+			{
+				return;
+			}
+
+			$scope.roundCount = 0;
 			players = [];
 			save();
 			load();
 		}
 
-		var addPlayer = $scope.addPlayer = function()
+		$scope.addPlayer = function()
 		{
-			players.push(createPlayer($scope.playerNameToAdd));
+			var playerName = $scope.playerNameToAdd;
+
+			if (playerName == "")
+			{
+				return;
+			}
+
+			if (searchForAPlayer(playerName))
+			{
+				alert("Player name already exists!");
+				return;
+			}
+
 			$scope.playerNameToAdd = "";
+
+			players.push(createPlayer(playerName));
+
 			save();
+
 			console.log(players);
 		}
 
@@ -416,8 +531,8 @@ MTG.controller("MTG_Ctrl", ["$scope",
 		function save()
 		{
 			saveData("players", players);
-			saveData("roundCount", roundCount);
-			$scope.sortedPlayers = sortPlayers(players.slice());
+			saveData("roundCount", $scope.roundCount);
+			sortPlayers();
 		}
 
 		function load()
@@ -426,7 +541,7 @@ MTG.controller("MTG_Ctrl", ["$scope",
 			if (playersT)
 			{
 				players = $scope.players = playersT;
-				$scope.sortedPlayers = sortPlayers(playersT.slice());
+				sortPlayers();
 			}
 
 			console.log(players);
@@ -434,8 +549,8 @@ MTG.controller("MTG_Ctrl", ["$scope",
 			var roundCountT = loadData("roundCount");
 			if (roundCountT)
 			{
-				roundCount = roundCountT;
-				$scope.selectedRound = roundCount - 1;
+				$scope.roundCount = roundCountT;
+				$scope.selectedRound = $scope.roundCount - 1;
 			}
 		}
 
