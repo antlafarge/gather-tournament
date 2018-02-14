@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="fr" ng-app="MTG_App">
+<head>
+	<meta charset="utf-8">
+	<title>MTG Tournament</title>
+	<link rel="stylesheet" href="bootstrap.min.css">
+	<style>
+		.text-centered { text-align:center; }
+	</style>
+    <script src="angular.min.js"></script>
+	<script src="main.js"></script>
+</head>
+<body ng-controller="MTG_Ctrl">
+
+<h1>MTG Tournament</h1>
+
+<h2>Players</h2>
+
+<p>
+<table class="table table-bordered table-striped">
+	<thead>
+		<tr>
+			<th>Player name</th>
+			<td>W</td>
+			<td>(B)</td>
+			<td>L</td>
+			<td>D</td>
+			<th>Player match points</th>
+			<td>Player match win %</td>
+			<th>Oppopent match win % (TB1)</th>
+			<td>Player game points</td>
+			<th>Player game win % (TB2)</th>
+			<th>Oppopent game win % (TB3)</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr ng-repeat="player in players">
+			<th>{{player.name}}</th>
+			<td>{{computeMatchesWin(player)}}</td>
+			<td>({{computeByeCount(player)}})</td>
+			<td>{{computeMatchesLoose(player)}}</td>
+			<td>{{computeMatchesDraw(player)}}</td>
+			<td>{{computePlayerMatchPoints(player)}}</td>
+			<td>{{computePlayerMatchWinPercent(player)}}</td>
+			<td>{{computeOpponentMatchWinPercent(player)}}</td>
+			<td>{{computePlayerGamePoints(player)}}</td>
+			<td>{{computePlayerGameWinPercent(player)}}</td>
+			<td>{{computeOpponentGameWinPercent(player)}}</td>
+		</tr>
+	</tbody>
+	<thead>
+		<tr>
+			<td colspan="11">
+				<div class="input-group mb-3">
+					<input type="text" class="form-control" ng-model="playerNameToAdd" placeholder="Player name" aria-label="Player name" aria-describedby="basic-addon2">
+					<div class="input-group-append">
+						<button class="btn btn-outline-secondary" type="button" ng-click="addPlayer()">Add</button>
+					</div>
+				</div>
+			</td>
+		</tr>
+	</thead>
+</table>
+</p>
+
+<h2>Rounds</h2>
+
+<p>
+	<select ng-model="selectedRound" ng-options="i for i in roundCountRange()"></select>
+</p>
+
+<p>
+	<button type="button" class="btn btn-secondary" ng-click="newRound()">New Round</button>
+</p>
+
+<p>
+<table class="table table-bordered table-striped">
+	<thead>
+		<tr>
+			<th>Player</th>
+			<th class="text-centered vs">vs</th>
+			<th>Opponent</th>
+			<th>Finished</th>
+		</tr>
+	</thead>
+	<tbody id="matches">
+		<tr ng-repeat="player in players" ng-if="!player.matches[selectedRound].bye && (player.name < player.matches[selectedRound].opponent)">
+			<td>{{player.name}}</td>
+			<td>
+				<div class="input-group">
+					<input type="number" class="form-control" ng-model="player.matches[selectedRound].myGames" ng-change="updateScore(player.matches[selectedRound])">
+					<div class="input-group-prepend input-group-append">
+						<span class="input-group-text">vs</span>
+					</div>
+					<input type="number" class="form-control" ng-model="player.matches[selectedRound].opponentGames" ng-change="updateScore(player.matches[selectedRound])">
+				</div>
+			</td>
+			<td>{{player.matches[selectedRound].opponent}}</td>
+			<td><input type="checkbox" ng-model="player.matches[selectedRound].finished" ng-change="updateScore(player.matches[selectedRound])"></td>
+		</tr>
+		<tr ng-repeat="player in players" ng-if="player.matches[selectedRound].bye">
+			<td>{{player.name}}</td>
+			<td colspan="3">Bye</td>
+		</tr>
+	</tbody>
+</table>
+</p>
+
+<p>
+	<button type="button" class="btn btn-secondary" ng-click="reset()">Reset</button>
+</p>
+		
+</body>
+</html>
