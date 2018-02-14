@@ -34,13 +34,13 @@
 		</tr>
 	</thead>
 	<tbody>
-		<tr ng-repeat="player in players">
+		<tr ng-repeat="player in sortedPlayers">
 			<th>{{player.name}}</th>
 			<td>{{computeMatchesWin(player)}}</td>
 			<td>({{computeByeCount(player)}})</td>
 			<td>{{computeMatchesLoose(player)}}</td>
 			<td>{{computeMatchesDraw(player)}}</td>
-			<td>{{computePlayerMatchPoints(player)}}</td>
+			<th>{{computePlayerMatchPoints(player)}}</th>
 			<td>{{computePlayerMatchWinPercent(player)}}</td>
 			<td>{{computeOpponentMatchWinPercent(player)}}</td>
 			<td>{{computePlayerGamePoints(player)}}</td>
@@ -66,11 +66,14 @@
 <h2>Rounds</h2>
 
 <p>
-	<select ng-model="selectedRound" ng-options="i for i in roundCountRange()"></select>
+	<div class="form-group">
+		<select class="form-control" ng-model="selectedRound" ng-options="i for i in roundCountRange()"></select>
+	</div>
 </p>
 
 <p>
-	<button type="button" class="btn btn-secondary" ng-click="newRound()">New Round</button>
+	<button type="button" class="btn btn-secondary" ng-click="newRound()">New round</button>
+	<button type="button" class="btn btn-secondary" ng-click="cancelLastRound()">Cancel last round</button>
 </p>
 
 <p>
@@ -88,11 +91,11 @@
 			<td>{{player.name}}</td>
 			<td>
 				<div class="input-group">
-					<input type="number" class="form-control" ng-model="player.matches[selectedRound].myGames" ng-change="updateScore(player.matches[selectedRound])">
+					<input type="number" min="0" class="form-control" ng-model="player.matches[selectedRound].myGames" ng-change="updateScore(player.matches[selectedRound])">
 					<div class="input-group-prepend input-group-append">
 						<span class="input-group-text">vs</span>
 					</div>
-					<input type="number" class="form-control" ng-model="player.matches[selectedRound].opponentGames" ng-change="updateScore(player.matches[selectedRound])">
+					<input type="number" min="0" class="form-control" ng-model="player.matches[selectedRound].opponentGames" ng-change="updateScore(player.matches[selectedRound])">
 				</div>
 			</td>
 			<td>{{player.matches[selectedRound].opponent}}</td>

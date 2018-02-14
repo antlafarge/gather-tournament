@@ -8,6 +8,7 @@ MTG.controller("MTG_Ctrl", ["$scope",
 	function($scope) {
 
 		var players = $scope.players = [];
+		$scope.sortedPlayers = [];
 
 		var roundCount = 0;
 
@@ -19,10 +20,42 @@ MTG.controller("MTG_Ctrl", ["$scope",
 			return new Array(roundCount).fill(1).map((v, i) => i);
 		}
 
-		function sortPlayers()
+		function sortPlayers(players)
 		{
-			players = players.sort((p1, p2) => {
-				return (p1.playerMatchPoints - p2.playerMatchPoints);
+			return players.sort((p1, p2) => {
+				// Match points
+				var PMP1 = $scope.computePlayerMatchPoints(p1);
+				var PMP2 = $scope.computePlayerMatchPoints(p2);
+				if (PMP1 != PMP2)
+				{
+					return (PMP2 - PMP1);
+				}
+
+				// Tie breaker 1
+				var OMWP1 = $scope.computeOpponentMatchWinPercent(p1);
+				var OMWP2 = $scope.computeOpponentMatchWinPercent(p2);
+				if (OMWP1 != OMWP2)
+				{
+					return (OMWP2 - OMWP1);
+				}
+
+				// Tie breaker 2
+				var PGWP1 = $scope.computePlayerGameWinPercent(p1);
+				var PGWP2 = $scope.computePlayerGameWinPercent(p2);
+				if (PGWP1 != PGWP2)
+				{
+					return (PGWP2 - PGWP1);
+				}
+
+				// Tie breaker 3
+				var OGWP1 = $scope.computeOpponentGameWinPercent(p1);
+				var OGWP2 = $scope.computeOpponentGameWinPercent(p2);
+				if (OGWP1 != OGWP2)
+				{
+					return (OGWP2 - OGWP1);
+				}
+
+				return (Math.random() > 0.5 ? 1 : -1);
 			});
 		}
 		
@@ -115,7 +148,7 @@ MTG.controller("MTG_Ctrl", ["$scope",
 				{
 					pv += 3;
 				}
-				else if (cv.myGames == cv.opponentGames)
+				else if (cv.finished && (cv.myGames == cv.opponentGames))
 				{
 					pv += 1;
 				}
@@ -137,13 +170,9 @@ MTG.controller("MTG_Ctrl", ["$scope",
 
 			var res = (matchPoints / (3 * roundsPlayed));
 
-			if (isNaN(res))
+			if (isNaN(res) || (res < 1 / 3))
 			{
-				return "-";
-			}
-			else if (res < 1 / 3)
-			{
-				//res = (1 / 3);
+				res = (1 / 3);
 			}
 
 			return res.toFixed(4);
@@ -168,13 +197,9 @@ MTG.controller("MTG_Ctrl", ["$scope",
 
 			res /= opponentCount;
 
-			if (isNaN(res))
+			if (isNaN(res) || (res < 1 / 3))
 			{
-				return "-";
-			}
-			else if (res < (1 / 3))
-			{
-				//res = (1 / 3);
+				res = (1 / 3);
 			}
 
 			return res.toFixed(4);
@@ -182,7 +207,7 @@ MTG.controller("MTG_Ctrl", ["$scope",
 
 		$scope.computePlayerGamePoints = function(player)
 		{
-			return player.matches.reduce((pv, cv) => {
+			var res = player.matches.reduce((pv, cv) => {
 				if (cv.finished)
 				{
 					pv += (3 * cv.myGames);
@@ -193,6 +218,8 @@ MTG.controller("MTG_Ctrl", ["$scope",
 				}
 				return pv;
 			}, 0);
+
+			return res;
 		}
 
 		$scope.computePlayerGameWinPercent = function(player)
@@ -213,13 +240,9 @@ MTG.controller("MTG_Ctrl", ["$scope",
 
 			var res = (gamePoints / (3 * gamesPlayed));
 
-			if (isNaN(res))
+			if (isNaN(res) || (res < 1 / 3))
 			{
-				return "-";
-			}
-			else if (res < 1 / 3)
-			{
-				//res = (1 / 3);
+				res = (1 / 3);
 			}
 
 			return res.toFixed(4);
@@ -244,13 +267,9 @@ MTG.controller("MTG_Ctrl", ["$scope",
 
 			res /= opponentCount;
 
-			if (isNaN(res))
+			if (isNaN(res) || (res < 1 / 3))
 			{
-				return "-";
-			}
-			else if (res < (1 / 3))
-			{
-				//res = (1 / 3);
+				res = (1 / 3);
 			}
 
 			return res.toFixed(4);
@@ -271,9 +290,9 @@ MTG.controller("MTG_Ctrl", ["$scope",
 		{
 			console.log("New round", roundCount);
 
-			sortPlayers();
+			$scope.sortedPlayers = sortPlayers(players.slice());
 
-			if (players.length % 2)
+			if ($scope.sortedPlayers.length % 2)
 			{
 				var byePlayer = findBye();
 
@@ -284,17 +303,17 @@ MTG.controller("MTG_Ctrl", ["$scope",
 				console.log("bye", byePlayer.name);
 			}
 
-			for (var i = 0; i < players.length; i++)
+			for (var i = 0; i < $scope.sortedPlayers.length; i++)
 			{
-				var p = players[i];
+				var p = $scope.sortedPlayers[i];
 				if (p.matches[roundCount])
 				{
 					continue;
 				}
 				var o = null;
-				for (var j = i + 1; j < players.length; j++)
+				for (var j = i + 1; j < $scope.sortedPlayers.length; j++)
 				{
-					o = players[j]
+					o = $scope.sortedPlayers[j]
 					if (o.matches[roundCount])
 					{
 						continue;
@@ -343,7 +362,11 @@ MTG.controller("MTG_Ctrl", ["$scope",
 
 		function saveCookie(name, data)
 		{
-			document.cookie = (name + "=" + data);
+			var days = 1;
+			var date = new Date();
+			date.setTime(date.getTime()+(days*24*60*60*1000));
+			var expires = "; expires="+date.toGMTString();
+			document.cookie = (name + "=" + data + expires);
 		}
 
 		function loadCookie(name)
@@ -394,6 +417,7 @@ MTG.controller("MTG_Ctrl", ["$scope",
 		{
 			saveData("players", players);
 			saveData("roundCount", roundCount);
+			$scope.sortedPlayers = sortPlayers(players.slice());
 		}
 
 		function load()
@@ -402,6 +426,7 @@ MTG.controller("MTG_Ctrl", ["$scope",
 			if (playersT)
 			{
 				players = $scope.players = playersT;
+				$scope.sortedPlayers = sortPlayers(playersT.slice());
 			}
 
 			console.log(players);
@@ -410,6 +435,7 @@ MTG.controller("MTG_Ctrl", ["$scope",
 			if (roundCountT)
 			{
 				roundCount = roundCountT;
+				$scope.selectedRound = roundCount - 1;
 			}
 		}
 
