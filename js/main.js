@@ -74,8 +74,31 @@ MTG.controller("MTG_Ctrl", ["$scope",
 				}
 
 				// Tie breaker 4
-				return (Math.random() > 0.5 ? 1 : -1);
+				return (hash(p1) - hash(p2));
 			});
+		}
+
+		function hash(player)
+		{
+			var str = player.name;
+			for (var i = 0; i < player.matches.length; i++)
+			{
+				str += player.matches[i].opponent;
+			}
+			console.log(str, hashCode(str));
+			return hashCode(str);
+		}
+
+		function hashCode(str)
+		{
+			var hash = 0;
+			for (var i = 0; i < str.length; i++)
+			{
+				var char = str.charCodeAt(i);
+				hash = ((hash<<5)-hash)+char;
+				hash = hash & hash; // Convert to 32bit integer
+			}
+			return hash;
 		}
 		
 		window.findBye = function findBye()
@@ -102,7 +125,7 @@ MTG.controller("MTG_Ctrl", ["$scope",
 
 			return res.playersTiedToBye[Math.floor(Math.random() * res.playersTiedToBye.length)];
 		}
-	
+		
 		function createPlayer(playerName)
 		{
 			return {
