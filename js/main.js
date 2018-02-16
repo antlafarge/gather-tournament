@@ -11,7 +11,7 @@ MTG.controller("MTG_Ctrl", ["$scope",
 		var rounds = $scope.rounds = [];
 
 		$scope.sortedPlayers = [];
-		$scope.selectedRound = 0;
+		$scope.& = 0;
 		$scope.playerNameToAdd = "";
 
 		$scope.selectRound = function(round)
@@ -662,6 +662,7 @@ MTG.controller("MTG_Ctrl", ["$scope",
 
 			players = [];
 			rounds = [];
+			$scope.selectedRound = 0;
 
 			save();
 			load();
