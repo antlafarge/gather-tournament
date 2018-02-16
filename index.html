@@ -95,11 +95,11 @@
 				<td>{{match.playerName}}</td>
 				<td>
 					<div class="input-group">
-						<input type="number" min="0" class="form-control" ng-model="match.playerScore" ng-change="updateScore(match)" ng-disabled="match.finished">
+						<input type="number" min="0" max="3" class="form-control" ng-model="match.playerScore" ng-change="updateScore(match)" ng-disabled="match.finished">
 						<div class="input-group-prepend input-group-append">
 							<span class="input-group-text">vs</span>
 						</div>
-						<input type="number" min="0" class="form-control" ng-model="match.opponentScore" ng-change="updateScore(match)" ng-disabled="match.finished">
+						<input type="number" min="0" max="3" class="form-control" ng-model="match.opponentScore" ng-change="updateScore(match)" ng-disabled="match.finished">
 					</div>
 				</td>
 				<td>{{match.opponentName}}</td>
