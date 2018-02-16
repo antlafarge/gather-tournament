@@ -6,55 +6,54 @@
 	<link rel="stylesheet" href="libs/bootstrap.min.css">
 	<style>
 		.text-centered { text-align:center; }
+		.pointer { cursor: pointer; }
 	</style>
     <script src="libs/angular.min.js"></script>
 	<script src="js/main.js"></script>
 </head>
 <body ng-controller="MTG_Ctrl">
 
-<!--<h1>MTG Tournament</h1>-->
-
-<h2>{{sortedPlayers.length}} Players</h2>
+<h2>MTG Tournament <small>- Swiss pairing</small></h2>
 
 <p>
 <table class="table table-bordered table-striped">
 	<thead>
 		<tr>
-			<th>Player name</th>
-			<td>W</td>
-			<td>(B)</td>
-			<td>L</td>
-			<td>D</td>
-			<th>Player match points</th>
-			<td>Player match win %</td>
-			<th>Oppopent match win % (TB1)</th>
-			<td>Player game points</td>
-			<th>Player game win % (TB2)</th>
-			<th>Oppopent game win % (TB3)</th>
+			<th>{{sortedPlayers.length}} players</th>
+			<td title="Win">W</td>
+			<td title="Bye">B</td>
+			<td title="Draw">D</td>
+			<td title="Loose">L</td>
+			<th title="Match Points">MP</th>
+			<td title="Match Win %">MW%</td>
+			<th title="Oppopent match win % (Tiebreaker 1)">OMW%</th>
+			<td title="Game Points">GP</td>
+			<th title="Game Win % (Tiebreaker 2)">GW%</th>
+			<th title="Oppopent Game Win % (Tiebreaker 3)">OGW%</th>
 		</tr>
 	</thead>
 	<tbody>
 		<tr ng-repeat="player in sortedPlayers">
 			<th>{{player.name}}</th>
 			<td>{{computeMatchesWin(player)}}</td>
-			<td>({{computeByeCount(player)}})</td>
-			<td>{{computeMatchesLoose(player)}}</td>
+			<td>{{computeByeCount(player)}}</td>
 			<td>{{computeMatchesDraw(player)}}</td>
+			<td>{{computeMatchesLoose(player)}}</td>
 			<th>{{computePlayerMatchPoints(player)}}</th>
-			<td>{{computePlayerMatchWinPercent(player)}}</td>
-			<td>{{computeOpponentMatchWinPercent(player)}}</td>
+			<td>{{computePlayerMatchWinPercent(player).toFixed(2)}}</td>
+			<td>{{computeOpponentMatchWinPercent(player).toFixed(2)}}</td>
 			<td>{{computePlayerGamePoints(player)}}</td>
-			<td>{{computePlayerGameWinPercent(player)}}</td>
-			<td>{{computeOpponentGameWinPercent(player)}}</td>
+			<td>{{computePlayerGameWinPercent(player).toFixed(2)}}</td>
+			<td>{{computeOpponentGameWinPercent(player).toFixed(2)}}</td>
 		</tr>
 	</tbody>
-	<thead ng-show="roundCount == 0">
+	<thead ng-show="roundCount() == 0">
 		<tr>
 			<td colspan="11">
 				<div class="input-group mb-3">
 					<input type="text" class="form-control" ng-model="playerNameToAdd" placeholder="Player name" aria-label="Player name" aria-describedby="basic-addon2">
 					<div class="input-group-append">
-						<button class="btn btn-outline-secondary" type="button" ng-click="addPlayer()">Add</button>
+						<button class="btn btn-lg btn-outline-primary" type="button" ng-click="addPlayer()">Add</button>
 					</div>
 				</div>
 			</td>
@@ -63,55 +62,60 @@
 </table>
 </p>
 
-<h2>Round {{selectedRound + 1}} / {{computeNbRounds()}}</h2>
-
 <p>
-	<div class="form-group">
-		<select class="form-control" ng-model="selectedRound" ng-options="i for i in roundCountRange()"></select>
-	</div>
-</p>
-
-<p>
-	<button type="button" class="btn btn-secondary" ng-click="newRound()">New round</button>
-	<button type="button" class="btn btn-secondary" ng-click="cancelLastRound()">Cancel last round</button>
-</p>
-
-<p>
-<table class="table table-bordered table-striped">
-	<thead>
+	<table class="table table-bordered">
 		<tr>
-			<th>Player</th>
-			<th class="text-centered vs">vs</th>
-			<th>Opponent</th>
-			<th>Finished</th>
-		</tr>
-	</thead>
-	<tbody id="matches">
-		<tr ng-repeat="player in players" ng-if="!player.matches[selectedRound].bye && (player.name < player.matches[selectedRound].opponent)">
-			<td>{{player.name}}</td>
-			<td>
-				<div class="input-group">
-					<input type="number" min="0" class="form-control" ng-model="player.matches[selectedRound].myGames" ng-change="updateScore(player.matches[selectedRound])">
-					<div class="input-group-prepend input-group-append">
-						<span class="input-group-text">vs</span>
-					</div>
-					<input type="number" min="0" class="form-control" ng-model="player.matches[selectedRound].opponentGames" ng-change="updateScore(player.matches[selectedRound])">
+			<th>Rounds</th>
+			<td ng-show="roundCount() > 0">
+				<div class="btn-group" data-toggle="buttons">
+					<button class="btn btn-lg btn-outline-secondary" ng-repeat="i in roundMaxCountRange()" ng-click="selectRound($index)" ng-class="{'active':(selectedRound == $index)}" ng-disabled="$index >= (roundCount())">{{$index + 1}}</button>
 				</div>
 			</td>
-			<td>{{player.matches[selectedRound].opponent}}</td>
-			<td><input type="checkbox" ng-model="player.matches[selectedRound].finished" ng-change="updateScore(player.matches[selectedRound])"></td>
+			<td>
+				<button type="button" class="btn btn-lg btn-outline-primary" ng-click="newRound()" ng-disabled="!canCreateNewRound() || !lastRoundScoresEntered()">New round</button>
+				<button type="button" class="btn btn-lg btn-outline-danger" ng-click="cancelLastRound()" ng-disabled="!canCancelLastRound()">Cancel last round</button>
+				<button type="button" class="btn btn-lg btn-outline-danger" ng-click="reset()">Reset all</button>
+			</td>
 		</tr>
-		<tr ng-repeat="player in players" ng-if="player.matches[selectedRound].bye">
-			<td>{{player.name}}</td>
-			<td colspan="3">Bye</td>
-		</tr>
-	</tbody>
-</table>
+	</table>
 </p>
 
 <p>
-	<button type="button" class="btn btn-secondary" ng-click="reset()">Reset</button>
+	<table class="table table-bordered table-striped">
+		<thead>
+			<tr>
+				<th>Player</th>
+				<th class="text-centered vs">vs</th>
+				<th>Opponent</th>
+				<th>Finished</th>
+			</tr>
+		</thead>
+		<tbody id="matches">
+			<tr ng-repeat="match in rounds[selectedRound]" ng-if="!match.bye">
+				<td>{{match.playerName}}</td>
+				<td>
+					<div class="input-group">
+						<input type="number" min="0" class="form-control" ng-model="match.playerScore" ng-change="updateScore(match)" ng-disabled="match.finished">
+						<div class="input-group-prepend input-group-append">
+							<span class="input-group-text">vs</span>
+						</div>
+						<input type="number" min="0" class="form-control" ng-model="match.opponentScore" ng-change="updateScore(match)" ng-disabled="match.finished">
+					</div>
+				</td>
+				<td>{{match.opponentName}}</td>
+				<td>
+					<div class="form-check">
+						<input type="checkbox" class="form-check-input" ng-model="match.finished" ng-change="updateScore(match)" ng-show="selectedRound == (roundCount() - 1)">
+					</div>
+				</td>
+			</tr>
+			<tr ng-repeat="match in rounds[selectedRound]" ng-if="match.bye">
+				<td>{{match.playerName}}</td>
+				<td colspan="3">Bye</td>
+			</tr>
+		</tbody>
+	</table>
 </p>
-		
+
 </body>
 </html>
