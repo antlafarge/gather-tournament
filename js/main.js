@@ -374,15 +374,15 @@ MTG.controller("MTG_Ctrl", ["$scope",
 			return res;
 		}
 
-		function createMatch(playerName, opponentName, isBye)
+		function createMatch(isBye, playerName, opponentName, playerScore, opponentScore, isFinished)
 		{
 			return {
-				"playerName": playerName,
-				"opponentName": opponentName,
-				"bye": isBye,
-				"finished": false,
-				"playerScore": 0,
-				"opponentScore": 0
+				"bye": (isBye || false),
+				"playerName": (playerName || ""),
+				"opponentName": (opponentName || ""),
+				"playerScore": (playerScore || 0),
+				"opponentScore": (opponentScore || 0),
+				"finished": (isFinished || false)
 			};
 		}
 
@@ -603,7 +603,7 @@ MTG.controller("MTG_Ctrl", ["$scope",
 				console.log("possibilities", possibilities);
 
 				var opponent = possibilities[Math.floor(Math.random() * possibilities.length)];
-				matchesToAdd.push(createMatch(player.name, opponent.name, false));
+				matchesToAdd.push(createMatch(false, player.name, opponent.name));
 				var idx = playersToPair.indexOf(opponent);
 				if (idx != -1)
 				{
@@ -615,7 +615,7 @@ MTG.controller("MTG_Ctrl", ["$scope",
 
 			if (byePlayer)
 			{
-				matchesToAdd.push(createMatch(byePlayer.name, "", true));
+				matchesToAdd.push(createMatch(true, byePlayer.name));
 			}
 
 			console.log(matchesToAdd);
@@ -748,8 +748,11 @@ MTG.controller("MTG_Ctrl", ["$scope",
 		{
 			console.log("save");
 
-			saveData("players", players);
-			saveData("rounds", rounds);
+			var players2 = players.map(p => [p.name]);
+			var rounds2 = rounds.map(r => r.map(m => [m.bye, m.playerName, m.opponentName, m.playerScore, m.opponentScore, m.finished]))
+
+			saveData("players", players2);
+			saveData("rounds", rounds2);
 			saveData("selectedRound", $scope.selectedRound);
 
 			sortPlayers();
@@ -762,7 +765,7 @@ MTG.controller("MTG_Ctrl", ["$scope",
 			var playersT = loadData("players");
 			if (playersT)
 			{
-				players = $scope.players = playersT;
+				players = $scope.players = playersT.map(p => createPlayer(p[0]));
 			}
 
 			console.log("Players", players);
@@ -770,7 +773,7 @@ MTG.controller("MTG_Ctrl", ["$scope",
 			var matchesT = loadData("rounds");
 			if (matchesT)
 			{
-				rounds = $scope.rounds = matchesT;
+				rounds = $scope.rounds = matchesT.map(r => r.map(m => createMatch(m[0], m[1], m[2], m[3], m[4], m[5])));
 			}
 
 			console.log("Rounds", rounds);
