@@ -118,7 +118,10 @@ MTG.controller("MTG_Ctrl", ["$scope",
 			for (var i = 0; i < pMatches.length; i++)
 			{
 				var m = pMatches[i];
-				str += ("_" + m.playerName + m.playerScore + m.opponentScore + m.opponentName);
+				if (m.bye || m.finished)
+				{
+					str += ("_" + m.playerName + m.playerScore + m.opponentScore + m.opponentName);
+				}
 			}
 			return hashCode(str);
 		}
