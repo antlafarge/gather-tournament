@@ -34,6 +34,7 @@ MTG.controller("MTG_Ctrl", ["$scope",
 		$scope.selectRound = function(round)
 		{
 			$scope.selectedRound = round;
+			console.log($scope.selectedRound)
 			save();
 		}
 

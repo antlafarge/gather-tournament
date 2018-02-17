@@ -3,12 +3,12 @@
 <head>
 	<meta charset="utf-8">
 	<title>MTG Tournament</title>
-	<script src="libs/jquery/jquery-3.3.1.min.js"></script>
-		<script src="libs/bootstrap-4.0.0-alpha.6-dist/js/bootstrap.min.js"></script>
-		<script src="libs/angularjs/1.6.7/angular.min.js"></script>
-	<script src="js/main.js"></script>
 	<link rel="stylesheet" href="libs/bootstrap-4.0.0-alpha.6-dist/css/bootstrap.min.css">
 	<link rel="stylesheet" href="css/default.css">
+	<script src="libs/jquery/jquery-3.3.1.min.js"></script>
+	<script src="libs/bootstrap-4.0.0-alpha.6-dist/js/bootstrap.min.js"></script>
+	<script src="libs/angularjs/1.6.7/angular.min.js"></script>
+	<script src="js/main.js"></script>
 </head>
 <body ng-controller="MTG_Ctrl">
 	<header>
@@ -20,7 +20,7 @@
 							<tr>
 								<td class="tl vam"><b>MTG swiss pairings</b></td>
 								<td class="tc" ng-show="roundMaxCount() > 0">
-									<div class="btn-group" data-toggle="buttons">
+									<div class="btn-group">
 										<button class="btn btn-lg btn-secondary" disabled>Round</button>
 										<button class="btn btn-lg btn-secondary" ng-repeat="i in roundMaxCountRange()" ng-click="selectRound($index)" ng-class="{'active':(roundCount() > 0 && selectedRound == $index)}" ng-disabled="$index >= (roundCount())">{{$index + 1}}</button>
 									</div>
