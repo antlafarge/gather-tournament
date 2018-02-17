@@ -107,24 +107,25 @@
 						</thead>
 						<tbody id="matches">
 							<tr ng-repeat="match in rounds[selectedRound]" ng-if="!match.bye">
-								<th>{{match.playerName}}</th>
-								<td>
-									<div class="input-group">
+								<th class="vam">{{match.playerName}}</th>
+								<td class="vam">
+									<div class="input-group input-group-lg">
 										<input type="number" min="0" max="3" class="form-control" ng-model="match.playerScore" ng-change="updateScore(match)" ng-disabled="match.finished">
 										<div class="input-group-prepend input-group-append">
-											<span class="input-group-text">vs</span>
+											<!--<span class="input-group-text">vs</span>-->
+											<button class="btn btn-lg btn-secondary" disabled>vs</button>
 										</div>
 										<input type="number" min="0" max="3" class="form-control" ng-model="match.opponentScore" ng-change="updateScore(match)" ng-disabled="match.finished">
 									</div>
 								</td>
-								<th>{{match.opponentName}}</th>
-								<td class="tc">
-									<input type="checkbox" class="" style="" ng-model="match.finished" ng-change="updateScore(match)" ng-show="selectedRound == (roundCount() - 1)">
+								<th class="vam">{{match.opponentName}}</th>
+								<td class="tc vam">
+									<input type="checkbox" class="checkbox" ng-model="match.finished" ng-change="updateScore(match)" ng-show="selectedRound == (roundCount() - 1)">
 								</td>
 							</tr>
 							<tr ng-repeat="match in rounds[selectedRound]" ng-if="match.bye">
-								<th>{{match.playerName}}</th>
-								<td colspan="3">Bye</td>
+								<th class="vam">{{match.playerName}}</th>
+								<td class="vam" colspan="3">Bye</td>
 							</tr>
 						</tbody>
 					</table>
@@ -132,5 +133,13 @@
 			</div>
 		</div>
 	</main>
+
+<div class="input-group mb-3">
+  <div class="input-group-prepend">
+    
+  </div>
+  <input type="text" class="form-control" placeholder="" aria-label="" aria-describedby="basic-addon1">
+</div>
+
 </body>
 </html>
