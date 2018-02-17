@@ -1,0 +1,7 @@
+.container-fluid { padding:0; }
+.row { margin:0; }
+.col { padding:0; }
+.tl { text-align:left; }
+.tc { text-align:center; }
+.tr { text-align:right; }
+.vam { vertical-align:middle !important; }

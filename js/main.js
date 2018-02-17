@@ -11,8 +11,25 @@ MTG.controller("MTG_Ctrl", ["$scope",
 		var rounds = $scope.rounds = [];
 
 		$scope.sortedPlayers = [];
-		$scope.& = 0;
+		$scope.selectedRound = 0;
 		$scope.playerNameToAdd = "";
+
+		$scope.canAddPlayer = function(playerName)
+		{
+			if (playerName.length == 0)
+			{
+				return false;
+			}
+
+			for (var i = 0; i < players.length; i++)
+			{
+				if (players[i].name == playerName)
+				{
+					return false;
+				}
+			}
+			return true;
+		}
 
 		$scope.selectRound = function(round)
 		{
@@ -85,7 +102,22 @@ MTG.controller("MTG_Ctrl", ["$scope",
 				}
 
 				// Tie breaker 4
-				return (hash(p1) - hash(p2));
+				if (p1.tb4 != p2.tb4)
+				{
+					return (p1.tb4 - p2.tb4);
+				}
+
+				// Date sort
+				if (p1.date != p2.date)
+				{
+					return (p1.date - p2.date);
+				}
+
+				// Asc sort
+				if (p1.name != p2.name)
+				{
+					return (p1.name.localeCompare(p2.name));
+				}
 			});
 		}
 
@@ -111,38 +143,12 @@ MTG.controller("MTG_Ctrl", ["$scope",
 			return (matches.length > 0);
 		}
 
-		function hash(player)
-		{
-			var str = player.name;
-			var pMatches = playerMatches(player.name);
-			for (var i = 0; i < pMatches.length; i++)
-			{
-				var m = pMatches[i];
-				if (m.bye || m.finished)
-				{
-					str += ("_" + m.playerName + m.playerScore + m.opponentScore + m.opponentName);
-				}
-			}
-			return hashCode(str);
-		}
-
-		function hashCode(str)
-		{
-			var hash = 0;
-			for (var i = 0; i < str.length; i++)
-			{
-				var char = str.charCodeAt(i);
-				hash = ((hash << 5) - hash) + char;
-				hash = hash & hash; // Convert to 32bit integer
-			}
-			//console.log("hashCode", str, hash);
-			return hash;
-		}
-		
-		function createPlayer(playerName)
+		function createPlayer(playerName, date, tb4)
 		{
 			return {
-				"name": playerName
+				"name": playerName,
+				"date": (date || new Date()),
+				"tb4": (tb4 || 0)
 			};
 		}
 
@@ -618,11 +624,23 @@ MTG.controller("MTG_Ctrl", ["$scope",
 				matchesToAdd.push(createMatch(true, byePlayer.name));
 			}
 
+			for (var i = 0; i < players.length; i++)
+			{
+				var player = players[i];
+				do
+				{
+					player.tb4 = Math.floor(1000000 * Math.random());
+				}
+				while (players.some(p => ((p.name != player.name) && (p.tb4 == player.tb4))));
+			}
+
 			console.log(matchesToAdd);
 
 			rounds[round] = matchesToAdd;
 
 			$scope.selectedRound = round;
+
+			console.log(players);
 
 			save();
 		}
@@ -749,7 +767,7 @@ MTG.controller("MTG_Ctrl", ["$scope",
 		{
 			console.log("save");
 
-			var players2 = players.map(p => [p.name]);
+			var players2 = players.map(p => [p.name, p.date, p.tb4]);
 			var rounds2 = rounds.map(r => r.map(m => [m.bye, m.playerName, m.opponentName, m.playerScore, m.opponentScore, m.finished]))
 
 			saveData("players", players2);
@@ -766,7 +784,7 @@ MTG.controller("MTG_Ctrl", ["$scope",
 			var playersT = loadData("players");
 			if (playersT)
 			{
-				players = $scope.players = playersT.map(p => createPlayer(p[0]));
+				players = $scope.players = playersT.map(p => createPlayer(p[0], new Date(p[1]), p[2]));
 			}
 
 			console.log("Players", players);
