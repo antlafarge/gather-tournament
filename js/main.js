@@ -248,6 +248,11 @@ MTG.controller("MTG_Ctrl", ["$scope",
 				res = acc / opponentCount;
 			}
 
+			if (player.name == "E")
+			{
+				console.log(acc, opponentCount, res);
+			}
+
 			if (res < 1 / 3)
 			{
 				res = (1 / 3);
@@ -634,7 +639,10 @@ MTG.controller("MTG_Ctrl", ["$scope",
 
 			sortPlayers();
 
-			$scope.selectedRound = Math.max(0, roundCount() - 1);
+			if ($scope.selectedRound >= roundCount())
+			{
+				$scope.selectedRound = Math.max(0, roundCount() - 1);
+			}
 
 			save();
 		}

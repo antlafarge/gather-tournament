@@ -22,7 +22,7 @@
 								<td class="tc" ng-show="roundMaxCount() > 0">
 									<div class="btn-group">
 										<button class="btn btn-lg btn-secondary" disabled>Round</button>
-										<button class="btn btn-lg btn-secondary" ng-repeat="i in roundMaxCountRange()" ng-click="selectRound($index)" ng-class="{'active':(roundCount() > 0 && selectedRound == $index)}" ng-disabled="$index >= (roundCount())">{{$index + 1}}</button>
+										<button class="btn btn-lg" ng-repeat="i in roundMaxCountRange()" ng-click="selectRound($index)" ng-class="{'active':(roundCount() > 0 && selectedRound == $index), 'btn-outline-primary':($index < roundCount() && $index != selectedRound), 'btn-primary':($index == selectedRound), 'btn-secondary':($index >= roundCount())}" ng-disabled="$index >= roundCount()">{{$index + 1}}</button>
 									</div>
 								</td>
 								<td class="tr">
