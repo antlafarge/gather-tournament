@@ -20,21 +20,12 @@ MTG.controller("MTG_Ctrl", ["$scope",
 			{
 				return false;
 			}
-
-			for (var i = 0; i < players.length; i++)
-			{
-				if (players[i].name == playerName)
-				{
-					return false;
-				}
-			}
-			return true;
+			return players.every(p => (p.name != playerName));
 		}
 
 		$scope.selectRound = function(round)
 		{
 			$scope.selectedRound = round;
-			console.log($scope.selectedRound)
 			save();
 		}
 
@@ -50,18 +41,16 @@ MTG.controller("MTG_Ctrl", ["$scope",
 
 		$scope.roundMaxCountRange = function()
 		{
-			return new Array($scope.roundMaxCount()).fill(1).map((v, i) => (i + 1));
+			return new Array($scope.roundMaxCount()).fill(0).map((v, i) => (i + 1));
 		}
 
 		function lowerPowerOfTwo(x)
 		{
 			var i = 0;
-			var lastRes = 1;
 			var res = 1;
 			while (res < x)
 			{
 				i++;
-				lastRes = res;
 				res *= 2;
 			}
 			return i;
@@ -105,66 +94,42 @@ MTG.controller("MTG_Ctrl", ["$scope",
 				// Tie breaker 4
 				if (p1.tb4 != p2.tb4)
 				{
-					return (p1.tb4 - p2.tb4);
+					return (p2.tb4 - p1.tb4);
 				}
 
-				// Date sort
-				if (p1.date != p2.date)
-				{
-					return (p1.date - p2.date);
-				}
-
-				// Asc sort
+				// Asc name sort
 				if (p1.name != p2.name)
 				{
 					return (p1.name.localeCompare(p2.name));
 				}
+
+				// random sort
+				return (Math.random() < 0.5 ? -1 : 1);
 			});
 		}
 
 		function playerMatches(playerName)
 		{
-			var filteredRounds = rounds.map(matches => matches.filter(match => (match.playerName == playerName || match.opponentName == playerName)))
-			if (filteredRounds.length == 0)
-			{
-				filteredRounds = [[]];
-			}
-			var matches = Array.concat.apply([], filteredRounds);
-			return matches;
+			var filteredRounds = rounds.map(round => round.filter(match => (match.playerName == playerName || match.opponentName == playerName)));
+			return Array.prototype.concat.apply([], filteredRounds);
 		}
 
 		function matchAlreadyPlayed(p1, p2)
 		{
-			var filteredRounds = rounds.map(matches => matches.filter((m) => ((m.playerName == p1.name && m.opponentName == p2.name) || (m.playerName == p2.name && m.opponentName == p1.name))));
-			if (filteredRounds.length == 0)
-			{
-				filteredRounds = [[]];
-			}
-			var matches = Array.concat.apply([], filteredRounds);
-			return (matches.length > 0);
+			return rounds.some(round => round.some(match => ((match.playerName == p1.name && match.opponentName == p2.name) || (match.playerName == p2.name && match.opponentName == p1.name))));
 		}
 
-		function createPlayer(playerName, date, tb4)
+		function createPlayer(playerName, tb4)
 		{
 			return {
 				"name": playerName,
-				"date": (date || new Date()),
 				"tb4": (tb4 || 0)
 			};
 		}
 
 		function searchForAPlayer(playerName)
 		{
-			var player = null;
-			for (var i = 0; i < players.length; i++)
-			{
-				var p = players[i];
-				if (p.name == playerName)
-				{
-					player = p;
-				}
-			}
-			return player;
+			return players.find(player => (player.name == playerName));
 		}
 
 		$scope.computeMatchesWin = function(player)
@@ -173,7 +138,7 @@ MTG.controller("MTG_Ctrl", ["$scope",
 				if (match.finished)
 				{
 					if ((match.playerName == player.name && match.playerScore > match.opponentScore)
-					|| (match.opponentName == player.name && match.opponentScore > match.playerScore))
+					|| (match.opponentName == player.name && match.playerScore < match.opponentScore))
 					{
 						acc += 1;
 					}
@@ -221,25 +186,10 @@ MTG.controller("MTG_Ctrl", ["$scope",
 
 		$scope.computePlayerMatchPoints = function(player)
 		{
-			return playerMatches(player.name).reduce((acc, match) => {
-				if (match.bye)
-				{
-					acc += 3;
-				}
-				else if (match.finished)
-				{
-					if ((match.playerName == player.name && match.playerScore > match.opponentScore)
-					|| (match.opponentName == player.name && match.playerScore < match.opponentScore))
-					{
-						acc += 3;
-					}
-					else if (match.playerScore == match.opponentScore)
-					{
-						acc += 1;
-					}
-				}
-				return acc;
-			}, 0);
+			var winCount = $scope.computeMatchesWin(player);
+			var byeCount = $scope.computeByeCount(player);
+			var drawCount = $scope.computeMatchesDraw(player);
+			return (3 * (winCount + byeCount) + drawCount);
 		}
 
 		$scope.computePlayerMatchWinPercent = function(player)
@@ -271,29 +221,34 @@ MTG.controller("MTG_Ctrl", ["$scope",
 
 		$scope.computeOpponentMatchWinPercent = function(player)
 		{
+			var matches = playerMatches(player.name);
+
+			var acc = 0;
 			var opponentCount = 0;
 
-			var acc = playerMatches(player.name).reduce((acc, match) => {
-				if (!match.bye)
+			for (var i = 0; i < matches.length; i++)
+			{
+				var match = matches[i];
+				if (!match.bye && match.finished)
 				{
-					var opponent = searchForAPlayer(match.opponentName);
+					var opponentName = (match.playerName == player.name ? match.opponentName : match.playerName);
+					var opponent = searchForAPlayer(opponentName);
 					if (opponent)
 					{
 						acc += $scope.computePlayerMatchWinPercent(opponent);
 						opponentCount++;
 					}
 				}
-				return acc;
-			}, 0);
+			}
 
 			var res = 0;
 
 			if (opponentCount > 0)
 			{
-				acc /= opponentCount;
+				res = acc / opponentCount;
 			}
 
-			if (isNaN(res) || (res < 1 / 3))
+			if (res < 1 / 3)
 			{
 				res = (1 / 3);
 			}
@@ -306,7 +261,8 @@ MTG.controller("MTG_Ctrl", ["$scope",
 			var res = playerMatches(player.name).reduce((acc, match) => {
 				if (match.finished)
 				{
-					acc += (3 * match.playerScore);
+					var playerScore = (match.playerName == player.name ? match.playerScore : match.opponentScore);
+					acc += (3 * playerScore);
 				}
 				else if (match.bye)
 				{
@@ -351,26 +307,31 @@ MTG.controller("MTG_Ctrl", ["$scope",
 
 		$scope.computeOpponentGameWinPercent = function(player)
 		{
-			var opponentCount = 0;
+			var matches = playerMatches(player.name);
 
-			var acc = playerMatches(player.name).reduce((acc, match) => {
-				if (!match.bye)
+			var acc = 0;
+			var opponentCount = 0;
+			
+			for (var i = 0; i < matches.length; i++)
+			{
+				var match = matches[i];
+				if (!match.bye && match.finished)
 				{
-					var opponent = searchForAPlayer(match.opponentName);
+					var opponentName = (match.playerName == player.name ? match.opponentName : match.playerName);
+					var opponent = searchForAPlayer(opponentName);
 					if (opponent)
 					{
 						acc += $scope.computePlayerGameWinPercent(opponent);
 						opponentCount++;
 					}
 				}
-				return acc;
-			}, 0);
+			}
 
 			var res = 0;
 
 			if (opponentCount > 0)
 			{
-				acc /= opponentCount;
+				res = acc / opponentCount;
 			}
 
 			if (res < 1 / 3)
@@ -392,7 +353,7 @@ MTG.controller("MTG_Ctrl", ["$scope",
 				"finished": (isFinished || false)
 			};
 		}
-
+/*
 		function findBye(players)
 		{
 			var res = players.reduceRight(function(acc, player) {
@@ -426,21 +387,26 @@ MTG.controller("MTG_Ctrl", ["$scope",
 
 			return byePlayer;
 		}
-
+*/
 		$scope.lastRoundScoresEntered = function()
 		{
 			var lastRound = roundCount() - 1;
 
 			if (lastRound >= 0)
 			{
-				var pendingMatchs = rounds[lastRound].filter(match => (!match.bye && !match.finished));
+				var res = rounds[lastRound].reduce((acc, match) => {
+					if ((!match.bye && !match.finished))
+					{
+						acc++;
+					}
+					return acc;
+				}, 0);
 
-				if (pendingMatchs.length > 0)
+				if (res > 0)
 				{
 					return false;
 				}
 			}
-
 			return true;
 		}
 
@@ -492,12 +458,6 @@ MTG.controller("MTG_Ctrl", ["$scope",
 
 			var byePlayer = null;
 
-			if (playersToPair.length % 2)
-			{
-				byePlayer = findBye(playersToPair);
-				console.log("Bye:", byePlayer.name);
-			}
-
 			var pickRandom = true;//(round < $scope.roundMaxCount() - 1);
 
 			console.log("pickRandom", pickRandom);
@@ -508,6 +468,12 @@ MTG.controller("MTG_Ctrl", ["$scope",
 			{
 				var player = playersToPair.shift();
 				console.log("player", player);
+
+				if (playersToPair.length == 0)
+				{
+					byePlayer = player;
+					break;
+				}
 				
 				var o = null;
 				var possibilities = [];
@@ -622,6 +588,7 @@ MTG.controller("MTG_Ctrl", ["$scope",
 
 			if (byePlayer)
 			{
+				console.log("Bye:", byePlayer.name);
 				matchesToAdd.push(createMatch(true, byePlayer.name));
 			}
 
@@ -648,9 +615,9 @@ MTG.controller("MTG_Ctrl", ["$scope",
 
 		$scope.cancelLastRound = function()
 		{
-			//if (!confirm("You will CANCEL THE LAST ROUND matches. Are you sure?"))
+			if (!confirm("You will CANCEL THE LAST ROUND matches. Are you sure?"))
 			{
-				//return;
+				return;
 			}
 
 			if (roundCount() <= 0)
@@ -658,11 +625,16 @@ MTG.controller("MTG_Ctrl", ["$scope",
 				return;
 			}
 
-			delete rounds.splice(roundCount() - 1, 1);
+			delete rounds.pop();
+
+			if (roundCount() == 0)
+			{
+				players.map(player => player.tb4 = 0);
+			}
 
 			sortPlayers();
 
-			$scope.selectedRound = roundCount() - 1;
+			$scope.selectedRound = Math.max(0, roundCount() - 1);
 
 			save();
 		}
@@ -707,8 +679,6 @@ MTG.controller("MTG_Ctrl", ["$scope",
 			players.push(createPlayer(playerName));
 
 			save();
-
-			console.log(players);
 		}
 
 		function saveCookie(name, data)
@@ -728,21 +698,16 @@ MTG.controller("MTG_Ctrl", ["$scope",
 			{
 				return null;
 			}
-			var idxstart = cookie.indexOf("=", idx+1);
-			if (idxstart == -1)
-			{
-				return null;
-			}
-			var idxend = cookie.indexOf(";", idxstart+1);
+			var idxstart = idx + name.length;
+			var idxend = cookie.indexOf(";", idxstart + 1);
 			if (idxend == -1)
 			{
 				idxend = cookie.length;
 			}
 			idxend -= 1;
-			var data = cookie.substr(idxstart+1, idxend - idxstart);
+			var data = cookie.substr(idxstart + 1, idxend - idxstart);
 			if (!data)
 			{
-
 				return null;
 			}
 
@@ -768,7 +733,7 @@ MTG.controller("MTG_Ctrl", ["$scope",
 		{
 			console.log("save");
 
-			var players2 = players.map(p => [p.name, p.date, p.tb4]);
+			var players2 = players.map(p => [p.name, p.tb4]);
 			var rounds2 = rounds.map(r => r.map(m => [m.bye, m.playerName, m.opponentName, m.playerScore, m.opponentScore, m.finished]))
 
 			saveData("players", players2);
@@ -776,6 +741,9 @@ MTG.controller("MTG_Ctrl", ["$scope",
 			saveData("selectedRound", $scope.selectedRound);
 
 			sortPlayers();
+
+			console.log("players", players);
+			console.log("rounds", rounds);
 		}
 
 		function load()
@@ -785,7 +753,7 @@ MTG.controller("MTG_Ctrl", ["$scope",
 			var playersT = loadData("players");
 			if (playersT)
 			{
-				players = $scope.players = playersT.map(p => createPlayer(p[0], new Date(p[1]), p[2]));
+				players = $scope.players = playersT.map(p => createPlayer(p[0], p[1]));
 			}
 
 			console.log("Players", players);
