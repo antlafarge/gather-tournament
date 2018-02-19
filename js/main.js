@@ -248,11 +248,6 @@ MTG.controller("MTG_Ctrl", ["$scope",
 				res = acc / opponentCount;
 			}
 
-			if (player.name == "E")
-			{
-				console.log(acc, opponentCount, res);
-			}
-
 			if (res < 1 / 3)
 			{
 				res = (1 / 3);
@@ -457,6 +452,16 @@ MTG.controller("MTG_Ctrl", ["$scope",
 
 			console.log("New round", round);
 
+			for (var i = 0; i < players.length; i++)
+			{
+				var player = players[i];
+				do
+				{
+					player.tb4 = Math.floor(1000000 * Math.random());
+				}
+				while (players.some(p => ((p.name != player.name) && (p.tb4 == player.tb4))));
+			}
+
 			sortPlayers();
 
 			var playersToPair = $scope.sortedPlayers.slice();
@@ -489,7 +494,7 @@ MTG.controller("MTG_Ctrl", ["$scope",
 					o = playersToPair[j];
 					var omp = $scope.computePlayerMatchPoints(o);
 
-					if (possibilities == 0)
+					if (possibilities.length == 0)
 					{
 						cmp = omp;
 					}
@@ -595,16 +600,6 @@ MTG.controller("MTG_Ctrl", ["$scope",
 			{
 				console.log("Bye:", byePlayer.name);
 				matchesToAdd.push(createMatch(true, byePlayer.name));
-			}
-
-			for (var i = 0; i < players.length; i++)
-			{
-				var player = players[i];
-				do
-				{
-					player.tb4 = Math.floor(1000000 * Math.random());
-				}
-				while (players.some(p => ((p.name != player.name) && (p.tb4 == player.tb4))));
 			}
 
 			console.log(matchesToAdd);
