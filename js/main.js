@@ -110,7 +110,16 @@ MTG.controller("MTG_Ctrl", ["$scope",
 
 		function playerMatches(playerName)
 		{
-			var filteredRounds = rounds.map(round => round.filter(match => (match.playerName == playerName || match.opponentName == playerName)));
+			var filteredRounds = rounds.map((round, index) => {
+				if (index <= $scope.selectedRound)
+				{
+					return round.filter(match => (match.playerName == playerName || match.opponentName == playerName));
+				}
+				else
+				{
+					return [];
+				}
+			});
 			return Array.prototype.concat.apply([], filteredRounds);
 		}
 
@@ -353,41 +362,7 @@ MTG.controller("MTG_Ctrl", ["$scope",
 				"finished": (isFinished || false)
 			};
 		}
-/*
-		function findBye(players)
-		{
-			var res = players.reduceRight(function(acc, player) {
-				var playerByeCount = $scope.computeByeCount(player);
-				var playerMatchPoints = $scope.computePlayerMatchPoints(player);
-				if (playerByeCount < acc.minByeCount)
-				{
-					acc.minByeCount = playerByeCount;
-					acc.minMatchPoints = playerMatchPoints;
-					acc.playersTiedToBye.length = 0;
-				}
-				if ((playerByeCount == acc.minByeCount) && (playerMatchPoints == acc.minMatchPoints))
-				{
-					acc.playersTiedToBye.push(player);
-				}
-				return acc;
-			}, {
-				minByeCount: +Infinity,
-				minMatchPoints: +Infinity,
-				playersTiedToBye: []
-			});
 
-			var byePlayer = res.playersTiedToBye[Math.floor(Math.random() * res.playersTiedToBye.length)];
-
-			var idx = players.indexOf(byePlayer);
-
-			if (idx != -1)
-			{
-				players.splice(idx, 1);
-			}
-
-			return byePlayer;
-		}
-*/
 		$scope.lastRoundScoresEntered = function()
 		{
 			var lastRound = roundCount() - 1;
@@ -429,6 +404,103 @@ MTG.controller("MTG_Ctrl", ["$scope",
 
 			return false;
 		}
+
+		function takeUnplayedOpponents(player, playersToPair)
+		{
+			return playersToPair.filter(opponent => (player != opponent && !matchAlreadyPlayed(player, opponent)));
+		}
+
+		function tryToPairPlayers(playersToPair, random)
+		{
+			// If no players left to pair
+			if (playersToPair.length == 0)
+			{
+				// Return empty list of matches
+				return [];
+			}
+
+			// Take first player from playersToPair, remove player from playersToPair
+			var player = playersToPair.shift();
+
+			// Check the bye (last player)
+			if (playersToPair.length == 0)
+			{
+				// Compute player bye count
+				var playerByeCount = $scope.computeByeCount(player);
+
+				// Check if there is another player who should have the bye
+				var canBye = players.every(p => ($scope.computeByeCount(p) >= playerByeCount));
+				if (canBye)
+				{
+					// The bye is valid
+					var byeMatch = createMatch(true, player.name);
+
+					// Return success
+					return [byeMatch];
+				}
+				else
+				{
+					// Return fail (another player should have the bye)
+					return false;
+				}
+			}
+
+			// Get available opponents (unplayed)
+			var availableOpponents = takeUnplayedOpponents(player, playersToPair);
+
+			if (random)
+			{
+				// Randomize opponents by grouping player match points
+				availableOpponents.sort((p1, p2) => {
+					// Match points
+					var PMP1 = $scope.computePlayerMatchPoints(p1);
+					var PMP2 = $scope.computePlayerMatchPoints(p2);
+					if (PMP1 != PMP2)
+					{
+						return (PMP2 - PMP1);
+					}
+
+					// Tie breaker 4
+					if (p1.tb4 != p2.tb4)
+					{
+						return (p2.tb4 - p1.tb4);
+					}
+				});
+			}
+
+			// Parse opponents
+			var o = 0;
+			do
+			{
+				// Take opponent[o]
+				var opponent = playersToPair[o];
+
+				// Copy playersToPair
+				var newPlayersToPair = playersToPair.slice();
+
+				// Remove opponent from playersToPair copy
+				newPlayersToPair.splice(o, 1);
+
+				// recursive call for trying to pair remaining players, get matches as result
+				var matches = tryToPairPlayers(newPlayersToPair, random);
+				if (matches)
+				{
+					// We succeed to pair the remaining players, create the match
+					var match = createMatch(false, player.name, opponent.name);
+
+					// Add match to matches
+					matches.unshift(match);
+
+					// Return success
+					return matches;
+				}
+
+				o++;
+			} while(o < playersToPair.length);
+
+			// Return fail (to find an opponent)
+			return false;
+		}
 		
 		$scope.newRound = function()
 		{
@@ -450,8 +522,30 @@ MTG.controller("MTG_Ctrl", ["$scope",
 				return;
 			}
 
-			console.log("New round", round);
+			console.log("New round", round + 1);
 
+			generateTiebreaker4();
+			sortPlayers();
+
+			var playersToPair = $scope.sortedPlayers.slice();
+
+			var matches = tryToPairPlayers(playersToPair, true);
+
+			console.log("matches", matches);
+
+			rounds[round] = matches;
+
+			$scope.selectedRound = round;
+
+			generateTiebreaker4();
+			sortPlayers();
+
+			save();
+		}
+
+		function generateTiebreaker4()
+		{
+			// Regenerate Tiebreaker 4
 			for (var i = 0; i < players.length; i++)
 			{
 				var player = players[i];
@@ -461,156 +555,6 @@ MTG.controller("MTG_Ctrl", ["$scope",
 				}
 				while (players.some(p => ((p.name != player.name) && (p.tb4 == player.tb4))));
 			}
-
-			sortPlayers();
-
-			var playersToPair = $scope.sortedPlayers.slice();
-
-			var byePlayer = null;
-
-			var pickRandom = true;//(round < $scope.roundMaxCount() - 1);
-
-			console.log("pickRandom", pickRandom);
-
-			var matchesToAdd = [];
-
-			while (playersToPair.length)
-			{
-				var player = playersToPair.shift();
-				console.log("player", player);
-
-				if (playersToPair.length == 0)
-				{
-					byePlayer = player;
-					break;
-				}
-				
-				var o = null;
-				var possibilities = [];
-				var pmp = $scope.computePlayerMatchPoints(player);
-				var cmp = pmp;
-				for (var j = 0; j < playersToPair.length; j++)
-				{
-					o = playersToPair[j];
-					var omp = $scope.computePlayerMatchPoints(o);
-
-					if (possibilities.length == 0)
-					{
-						cmp = omp;
-					}
-
-					if (cmp == omp)
-					{
-						if (!matchAlreadyPlayed(player, o))
-						{
-							possibilities.push(o);
-							if (!pickRandom)
-							{
-								break;
-							}
-						}
-						continue;
-					}
-					else
-					{
-						break;
-					}
-				}
-
-				if (possibilities.length == 0)
-				{
-					alert("A paired match has already been played. Trying to switch a player of an already paired match...");
-
-					var mm = matchesToAdd.filter(m => {
-						var p1 = searchForAPlayer(m.playerName);
-						var p1mp = $scope.computePlayerMatchPoints(p1);
-						var p2 = searchForAPlayer(m.opponentName);
-						var p2mp = $scope.computePlayerMatchPoints(p2);
-						if (p1mp <= pmp && p2mp <= pmp)
-						{
-							return true;
-						}
-						return false;
-					});
-					console.log("available matches to change", mm);
-					var replaced = false;
-					for (var k = 0; k < mm.length; k++)
-					{
-						var mmk = mm[k];
-
-						// We start to trying to replace the opponent because he may have a lesser match points than the player
-						if (!matchAlreadyPlayed(player, mmk.playerName))
-						{
-							console.log("Match changed:", mmk.playerName, "vs", mmk.opponentName, "; to:", mmk.playerName, "vs", player.name);
-							console.log("Replacing " + mmk.opponentName + " in players to pair list");
-							playersToPair.unshift(searchForAPlayer(mmk.opponentName));
-							mmk.opponentName = player.name;
-							replaced = true;
-							break;
-						}
-						else if (!matchAlreadyPlayed(player, mmk.opponentName))
-						{
-							console.log("Match changed:", mmk.playerName, "vs", mmk.opponentName, "; to:", player.name, "vs", mmk.opponentName);
-							console.log("Replacing " + mmk.playerName + " in players to pair list");
-							playersToPair.unshift(searchForAPlayer(mmk.playerName));
-							mmk.playerName = player.name;
-							replaced = true;
-							break;
-						}
-						else
-						{
-							continue;
-						}
-					}
-
-					if (replaced)
-					{
-						alert("We succeed to switch a player of an already paired match to avoid an already played match.");
-						continue;
-					}
-					else
-					{
-						if (playersToPair.length > 0)						
-						{
-							alert("We failed to switch a player of an already paired match, so we paired an already played match!");
-							possibilities.push(playersToPair[0]);
-						}
-						else
-						{
-							alert("Unknow error. The round has been canceled.");
-							return;
-						}
-					}
-				}
-
-				console.log("possibilities", possibilities);
-
-				var opponent = possibilities[Math.floor(Math.random() * possibilities.length)];
-				matchesToAdd.push(createMatch(false, player.name, opponent.name));
-				var idx = playersToPair.indexOf(opponent);
-				if (idx != -1)
-				{
-					playersToPair.splice(idx, 1);
-				}
-
-				console.log("Match:", player.name, "vs", opponent.name);
-			}
-
-			if (byePlayer)
-			{
-				console.log("Bye:", byePlayer.name);
-				matchesToAdd.push(createMatch(true, byePlayer.name));
-			}
-
-			console.log(matchesToAdd);
-
-			rounds[round] = matchesToAdd;
-
-			$scope.selectedRound = round;
-
-			console.log(players);
-
-			save();
 		}
 
 		$scope.cancelLastRound = function()
@@ -662,10 +606,16 @@ MTG.controller("MTG_Ctrl", ["$scope",
 			load();
 		}
 
-		$scope.addPlayer = function()
+		$scope.addPlayerKeyPress = function($event, playerNameToAdd)
 		{
-			var playerName = $scope.playerNameToAdd;
+			if ($event.which == 13)
+			{
+				$scope.addPlayer(playerNameToAdd);
+			}
+		}
 
+		$scope.addPlayer = function(playerName)
+		{
 			if (playerName == "")
 			{
 				return;
@@ -744,9 +694,6 @@ MTG.controller("MTG_Ctrl", ["$scope",
 			saveData("selectedRound", $scope.selectedRound);
 
 			sortPlayers();
-
-			console.log("players", players);
-			console.log("rounds", rounds);
 		}
 
 		function load()

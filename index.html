@@ -83,9 +83,9 @@
 							<tr>
 								<td colspan="11" class="tc">
 									<div class="input-group input-group-lg">
-										<input type="text" class="form-control" ng-model="playerNameToAdd" placeholder="Player name" aria-label="Player name" aria-describedby="basic-addon2">
+										<input type="text" class="form-control" placeholder="Player name" aria-label="Player name" aria-describedby="basic-addon2" ng-model="playerNameToAdd" ng-keypress="addPlayerKeyPress($event, playerNameToAdd)">
 										<div class="input-group-append">
-											<button class="btn btn-lg btn-success" type="button" ng-click="addPlayer()" ng-disabled="!canAddPlayer(playerNameToAdd)">Add</button>
+											<button class="btn btn-lg btn-success" type="button" ng-click="addPlayer(playerNameToAdd)" ng-disabled="!canAddPlayer(playerNameToAdd)">Add</button>
 										</div>
 									</div>
 								</td>
