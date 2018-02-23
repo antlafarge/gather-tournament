@@ -128,7 +128,11 @@
 								</td>
 								<th class="vam">{{match.opponentName}}</th>
 								<td class="tc vam">
-									<input type="checkbox" class="checkbox" ng-model="match.finished" ng-change="ctrl.updateScore(match)" ng-show="ctrl.selectedRound == (ctrl.roundCount() - 1)">
+									<div class="btn-group" ng-show="ctrl.selectedRound == (ctrl.roundCount() - 1)">
+										<label class="btn" ng-class="{'btn-primary':(!match.finished), 'btn-outline-primary':(match.finished)}">
+											<input type="checkbox" autocomplete="off" ng-model="match.finished" ng-change="ctrl.updateScore(match)"> {{match.finished ? "yes" : "no"}}
+										</label>
+									</div>
 								</td>
 							</tr>
 							<tr ng-repeat="match in ctrl.rounds[ctrl.selectedRound]" ng-if="match.bye">
