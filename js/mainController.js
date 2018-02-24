@@ -647,6 +647,11 @@ export class mainController
 
     removePlayer(player)
     {
+        if (!confirm("You will DELETE " + player.name + ". Are you sure?"))
+        {
+            return;
+        }
+
         var idx = this.players.indexOf(player);
 
         if (idx >= 0)
@@ -770,6 +775,7 @@ export class mainController
             this.selectedRound = json.selectedRound;
             this.sortPlayers();
             this.scope.$apply();
+            this.save();
         }).catch((reason) => {
             alert(reason);
         });
