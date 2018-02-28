@@ -10,12 +10,29 @@ export class mainController
         
         this.sortedPlayers = [];
         this.playerNameToAdd = "";
+        this.selectedPlayer = null;
 
         this.load();
         this.sortPlayers();
         
         $scope.ctrl = this;
         this.scope = $scope;
+    }
+
+    toggleSelectPlayer(player)
+    {
+        if (player)
+        {
+            if (player != this.selectedPlayer)
+            {
+                this.selectedPlayer = player;
+            }
+            else
+            {
+                this.selectedPlayer = null;
+            }
+        }
+        console.log(this.selectedPlayer)
     }
 
     canAddPlayer(playerName)
@@ -31,6 +48,7 @@ export class mainController
     {
         this.selectedRound = round;
         this.save();
+        this.sortPlayers();
     }
 
     roundCount()
@@ -129,6 +147,11 @@ export class mainController
 
     matchAlreadyPlayed(p1, p2)
     {
+        if (!p1 || !p2)
+        {
+            return false;
+        }
+        
         return this.rounds.some(round => round.some(match => ((match.playerName == p1.name && match.opponentName == p2.name) || (match.playerName == p2.name && match.opponentName == p1.name))));
     }
 

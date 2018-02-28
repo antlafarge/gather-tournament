@@ -18,7 +18,7 @@
 		<div class="container-fluid">
 			<div class="row">
 				<div class="col">
-					<table class="table">
+					<table class="table table-sm">
 						<thead>
 							<tr>
 								<td class="tl vam"><b>MTG swiss pairings</b></td>
@@ -54,7 +54,7 @@
 		<div class="container-fluid">
 			<div class="row">
 				<div class="col">
-					<table class="table table-bordered table-striped">
+					<table class="table table-sm table-bordered table-striped table-hover">
 						<thead class="thead-inverse">
 							<tr>
 								<th class="tc">{{ctrl.sortedPlayers.length}} players</th>
@@ -72,7 +72,7 @@
 							</tr>
 						</thead>
 						<tbody>
-							<tr ng-repeat="player in ctrl.sortedPlayers">
+							<tr ng-repeat="player in ctrl.sortedPlayers" ng-click="ctrl.toggleSelectPlayer(player)" ng-class="{'bg-info':(ctrl.selectedPlayer == player), 'bg-danger':ctrl.matchAlreadyPlayed(player, ctrl.selectedPlayer)}">
 								<th class="tl">{{player.name}}</th>
 								<td class="tc" ng-if="ctrl.roundCount() == 0"><button type="button" class="btn btn-md btn-danger" ng-click="ctrl.removePlayer(player)">Delete</button></td>
 								<td class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.computeMatchesWin(player)}}</td>
@@ -104,7 +104,7 @@
 			</div>
 			<div class="row">
 				<div class="col">
-					<table class="table table-bordered table-striped">
+					<table class="table table-sm table-bordered table-striped">
 						<thead class="thead-inverse">
 							<tr>
 								<th class="tc">Player</th>
