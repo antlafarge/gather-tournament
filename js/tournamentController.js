@@ -1,9 +1,12 @@
 import {Cookie} from './cookie.js'
 
-export class mainController
+export class TournamentController
 {
     constructor($scope)
     {
+        $scope.ctrl = this;
+        this.scope = $scope;
+
         this.players = [];
         this.rounds = [];
         this.selectedRound = 0;
@@ -13,9 +16,6 @@ export class mainController
 
         this.load();
         this.sortPlayers();
-        
-        $scope.ctrl = this;
-        this.scope = $scope;
     }
 
     canAddPlayer(playerName)

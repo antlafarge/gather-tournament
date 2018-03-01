@@ -1,0 +1,133 @@
+<div ng-controller="TournamentCtrl">
+	<header>
+		<div class="container-fluid">
+			<div class="row">
+				<div class="col">
+					<table class="table">
+						<thead>
+							<tr>
+								<td class="tl vam"><b><a href="#!index">Tournament</a> <small>Swiss pairings</small></b></td>
+								<td class="tc" ng-show="ctrl.roundMaxCount() > 0">
+									<div class="btn-group">
+										<button type="button" class="btn btn-lg btn-secondary" disabled>Round</button>
+										<button type="button" class="btn btn-lg" ng-repeat="i in ctrl.roundMaxCountRange()" ng-click="ctrl.selectRound($index)" ng-class="{'active':(ctrl.roundCount() > 0 && ctrl.selectedRound == $index), 'btn-outline-primary':($index < ctrl.roundCount() && $index != ctrl.selectedRound), 'btn-primary':($index == ctrl.selectedRound), 'btn-secondary':($index >= ctrl.roundCount())}" ng-disabled="$index >= ctrl.roundCount()">{{$index + 1}}</button>
+									</div>
+								</td>
+								<td class="tr">
+									<div class="btn-group">
+										<button type="button" class="btn btn-lg btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>
+										<div class="dropdown-menu dropdown-menu-right">
+											<button type="button" class="dropdown-item" ng-click="ctrl.newRound()" ng-disabled="!ctrl.canCreateNewRound() || !ctrl.lastRoundScoresEntered()">New round</button>
+											<button type="button" class="dropdown-item" ng-click="ctrl.cancelLastRound()" ng-disabled="!ctrl.canCancelLastRound()">Cancel last round</button>
+											<div class="dropdown-divider"></div>
+											<button type="button" id="importButton" class="dropdown-item" ng-click="ctrl.import()">Import</button>
+											<input type="file" accept=".json" id="importFile" ng-show="0" onchange="angular.element(this).scope().ctrl.importFileChange(this.files, angular.element(this).scope())">
+											<button type="button" class="dropdown-item" ng-click="ctrl.export()">Export</button>
+											<div class="dropdown-divider"></div>
+											<button type="button" class="dropdown-item" ng-click="ctrl.reset()">Reset</button>
+										</div>
+									</div>
+								</td>
+							</tr>
+						</thead>
+					</table>
+				</div>
+			</div>
+		</div>
+	</header>
+	<main>
+		<div class="container-fluid">
+			<div class="row">
+				<div class="col">
+					<table class="table table-bordered table-striped">
+						<thead class="thead-inverse">
+							<tr>
+								<th class="tc">{{ctrl.sortedPlayers.length}} players</th>
+								<th class="tc" ng-if="ctrl.roundCount() == 0">Delete</th>
+								<th class="tc" title="Win" ng-if="ctrl.roundCount() > 0">W</th>
+								<th class="tc" title="Bye" ng-if="ctrl.roundCount() > 0">B</th>
+								<th class="tc" title="Loose" ng-if="ctrl.roundCount() > 0">L</th>
+								<th class="tc" title="Draw" ng-if="ctrl.roundCount() > 0">D</th>
+								<th class="tc" title="Match Points" ng-if="ctrl.roundCount() > 0">MP</th>
+								<th class="tc" title="Match Win %" ng-if="ctrl.roundCount() > 0">MW%</th>
+								<th class="tc" title="Oppopent match win % (Tiebreaker 1)" ng-if="ctrl.roundCount() > 0">OMW%</th>
+								<th class="tc" title="Game Points" ng-if="ctrl.roundCount() > 0">GP</th>
+								<th class="tc" title="Game Win % (Tiebreaker 2)" ng-if="ctrl.roundCount() > 0">GW%</th>
+								<th class="tc" title="Oppopent Game Win % (Tiebreaker 3)" ng-if="ctrl.roundCount() > 0">OGW%</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr ng-repeat="player in ctrl.sortedPlayers">
+								<th class="tl">{{player.name}}</th>
+								<td class="tc" ng-if="ctrl.roundCount() == 0"><button type="button" class="btn btn-md btn-danger" ng-click="ctrl.removePlayer(player)">Delete</button></td>
+								<td class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.computeMatchesWin(player)}}</td>
+								<td class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.computeByeCount(player)}}</td>
+								<td class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.computeMatchesLoose(player)}}</td>
+								<td class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.computeMatchesDraw(player)}}</td>
+								<th class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.computePlayerMatchPoints(player)}}</th>
+								<td class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.computePlayerMatchWinPercent(player).toFixed(2)}}</td>
+								<th class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.computeOpponentMatchWinPercent(player).toFixed(2)}}</th>
+								<td class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.computePlayerGamePoints(player)}}</td>
+								<th class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.computePlayerGameWinPercent(player).toFixed(2)}}</th>
+								<th class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.computeOpponentGameWinPercent(player).toFixed(2)}}</th>
+							</tr>
+						</tbody>
+						<thead class="thead-inverse" ng-show="ctrl.roundCount() == 0">
+							<tr>
+								<th colspan="11" class="tc">
+									<div class="input-group input-group-lg">
+										<input type="text" class="form-control" placeholder="Player name" aria-label="Player name" ng-model="ctrl.playerNameToAdd" ng-keypress="ctrl.addPlayerKeyPress($event, ctrl.playerNameToAdd)">
+										<div class="input-group-append">
+											<button type="button" class="btn btn-lg btn-success" ng-click="ctrl.addPlayer(ctrl.playerNameToAdd)" ng-disabled="!ctrl.canAddPlayer(ctrl.playerNameToAdd)">Add</button>
+										</div>
+									</div>
+								</th>
+							</tr>
+						</thead>
+					</table>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col">
+					<table class="table table-bordered table-striped">
+						<thead class="thead-inverse">
+							<tr>
+								<th class="tc">Player</th>
+								<th class="tc">Score</th>
+								<th class="tc">Opponent</th>
+								<th class="tc">Finished</th>
+							</tr>
+						</thead>
+						<tbody id="matches">
+							<tr ng-repeat="match in ctrl.rounds[ctrl.selectedRound]" ng-if="!match.bye">
+								<th class="vam">{{match.playerName}}</th>
+								<td class="vam">
+									<div class="input-group input-group-lg">
+										<input type="number" min="0" max="3" class="form-control" ng-model="match.playerScore" ng-change="ctrl.updateScore(match)" ng-disabled="match.finished">
+										<div class="input-group-prepend input-group-append">
+											<!--<span class="input-group-text">vs</span>-->
+											<button class="btn btn-lg btn-secondary" disabled>vs</button>
+										</div>
+										<input type="number" min="0" max="3" class="form-control" ng-model="match.opponentScore" ng-change="ctrl.updateScore(match)" ng-disabled="match.finished">
+									</div>
+								</td>
+								<th class="vam">{{match.opponentName}}</th>
+								<td class="tc vam">
+									<div class="btn-group" ng-show="ctrl.selectedRound == (ctrl.roundCount() - 1)">
+										<label class="btn" ng-class="{'btn-primary':(match.finished), 'btn-outline-primary':(!match.finished)}">
+											<input type="checkbox" autocomplete="off" ng-model="match.finished" ng-change="ctrl.updateScore(match)"> {{match.finished ? "yes" : "no"}}
+										</label>
+									</div>
+								</td>
+							</tr>
+							<tr ng-repeat="match in ctrl.rounds[ctrl.selectedRound]" ng-if="match.bye">
+								<th class="vam">{{match.playerName}}</th>
+								<td class="vam" colspan="3">Bye</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+	</main>
+</div>
