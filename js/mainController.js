@@ -25,6 +25,12 @@ export class mainController
 
 	toggleSelectPlayer(player)
 	{
+		if (this.roundCount() <= 0)
+		{
+			this.selectedPlayer = null;
+			return;
+		}
+
 		if (player)
 		{
 			if (player != this.selectedPlayer)
@@ -161,6 +167,11 @@ export class mainController
 
 		var playerMatches = this.playerMatches(p1, p2, roundIndexMax);
 		if (playerMatches.length == 0)
+		{
+			return false;
+		}
+
+		if (playerMatches.every(match => (!match.finished)))
 		{
 			return false;
 		}
@@ -713,6 +724,7 @@ export class mainController
 		this.players = [];
 		this.rounds = [];
 		this.selectedRound = 0;
+		this.selectedPlayer = null;
 
 		this.sortPlayers();
 
