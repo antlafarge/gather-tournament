@@ -21,8 +21,8 @@
 					Actions
 				</a>
 				<div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdownMenuLink">
-					<a class="dropdown-item" href="" ng-click="ctrl.newRound()" ng-disabled="!ctrl.canCreateNewRound() || !ctrl.lastRoundScoresEntered()">New round</a>
-					<a class="dropdown-item" href="" ng-click="ctrl.cancelLastRound()" ng-disabled="!ctrl.canCancelLastRound()">Cancel last round</a>
+					<a class="dropdown-item" href="" ng-click="ctrl.newRound()" ng-class="{'disabled':(!ctrl.canCreateNewRound() || !ctrl.lastRoundScoresEntered())}" ng-disabled="(!ctrl.canCreateNewRound() || !ctrl.lastRoundScoresEntered())">New round</a>
+					<a class="dropdown-item" href="" ng-click="ctrl.cancelLastRound()" ng-class="{'disabled':(!ctrl.canCancelLastRound())}" ng-disabled="(!ctrl.canCancelLastRound())">Cancel last round</a>
 					<div class="dropdown-divider"></div>
 					<a id="importButton" href="" class="dropdown-item" ng-click="ctrl.import()">Import</a>
 					<input type="file" accept=".json" id="importFile" ng-show="0" onchange="angular.element(this).scope().ctrl.importFileChange(this.files, angular.element(this).scope())">
