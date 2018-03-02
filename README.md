@@ -1,4 +1,3 @@
-# MTG
-MTG
+# Gather tournament
 
-https://antlafarge.github.io/MTG/
+https://antlafarge.github.io/gather-tournament

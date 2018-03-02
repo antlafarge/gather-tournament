@@ -1,3 +1,15 @@
+@media (max-width:289px) {
+	body { padding-top:96px; }
+}
+@media (max-width:991px) {
+	@media (min-width:290px) {
+		body { padding-top:56px; }
+	}
+}
+@media (min-width:992px) {
+	body { padding-top:64px; }
+}
+
 .container-fluid { padding:0; }
 .row { margin:0; }
 .col { padding:0; }
@@ -5,3 +17,10 @@
 .tc { text-align:center; }
 .tr { text-align:right; }
 .vam { vertical-align:middle !important; }
+
+.btn-1 { color:#007bff; background-color:transparent; border-color:#007bff; }
+.btn-1.active { color:#fff; background-color:#007bff; border-color:#007bff; }
+.btn-1:hover { color:#fff; background-color:#0069d9; border-color:#0069d9; }
+.btn-1:disabled { color:#6c757d; background-color:transparent; border-color:#6c757d; }
+
+.pointer { cursor:pointer; }
