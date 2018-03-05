@@ -495,46 +495,41 @@ export class TournamentController
 		return false;
 	}
 
-	getNotPlayedOpponents(player, playersToPair)
-	{
-		return playersToPair.filter(opponent => (player != opponent && (!this.matchAlreadyPlayed(player, opponent))));
-	}
-
-	getAllOpponents(player, playersToPair)
-	{
-		return playersToPair.filter(opponent => (player != opponent)).sort((p1, p2) => (this.matchAlreadyPlayed(player, p1) - (this.matchAlreadyPlayed(player, p2))));
-	}
-
-	tryToPairPlayers(playersToPair, allowRematch)
+	tryToPairPlayers(playersToPair)
 	{
 		// If no players left to pair
 		if (playersToPair.length == 0)
 		{
 			// Return empty list of matches
-			return [];
+			return {
+				"diff": 0,
+				"matches": []
+			};
 		}
 
 		// Take first player from playersToPair, remove player from playersToPair
-		var player = playersToPair.shift();
+		var p1 = playersToPair.shift();
 
 		// Check the bye (last player)
 		if (playersToPair.length == 0)
 		{
 			// Compute player bye count
-			var playerByeCount = this.computeByeCount(player);
-			var playerMatchPoints = this.computePlayerMatchPoints(player);
+			var playerByeCount = this.computeByeCount(p1.player);
 
 			// Check if there is another player who should have the bye
-			var canBye = this.players.every(p => ((this.computeByeCount(p) >= playerByeCount) && (this.computePlayerMatchPoints(p) >= playerMatchPoints)));
+			var canBye = this.players.every(p => ((this.computeByeCount(p) >= playerByeCount) && (this.computePlayerMatchPoints(p) >= p1.matchPoints)));
 			if (canBye)
 			{
 				//console.log(player.name, "BYE");
 
 				// The bye is valid
-				var byeMatch = this.createMatch(true, player.name);
+				var byeMatch = this.createMatch(true, p1.player.name);
 
 				// Return success
-				return [byeMatch];
+				return {
+					"diff": 0,
+					"matches": [byeMatch]
+				};
 			}
 			else
 			{
@@ -545,51 +540,50 @@ export class TournamentController
 			}
 		}
 
-		// Get available opponents (unplayed)
-		var opponents;
-		if (!allowRematch)
-		{
-			opponents = this.getNotPlayedOpponents(player, playersToPair);
-		}
-		else
-		{
-			opponents = this.getAllOpponents(player, playersToPair);
-		}
+		var results = [];
 
 		// Parse opponents
-		for (var o = 0; o < opponents.length; o++)
+		for (var o = 0; o < playersToPair.length; o++)
 		{
 			// Take opponent[o]
-			var opponent = opponents[o];
+			var p2 = playersToPair[o];
+
+			if (this.matchAlreadyPlayed(p1.player, p2.player))
+			{
+				continue;
+			}
 
 			// Copy playersToPair
-			var newPlayersToPair = playersToPair.slice();
-
-			// Remove opponent from playersToPair copy
-			var idxOpp = newPlayersToPair.indexOf(opponent);
-			if (idxOpp == -1)
-			{
-				alert("Opponent not found");
-			}
-			newPlayersToPair.splice(idxOpp, 1);
+			var newPlayersToPair = playersToPair.filter(p => (p.player != p2.player));
 
 			// recursive call for trying to pair remaining players, get matches as result
-			var matches = this.tryToPairPlayers(newPlayersToPair);
-			if (matches)
-			{
-				//console.log(player.name, "vs", opponent.name);
+			var res = this.tryToPairPlayers(newPlayersToPair);
 
-				// We succeed to pair the remaining players, create the match
-				var match = this.createMatch(false, player.name, opponent.name);
+			if (res)
+			{
+				var match = this.createMatch(false, p1.player.name, p2.player.name);
 
 				// Add match to matches
-				matches.unshift(match);
+				res.matches.unshift(match);
 
-				// Return success
-				return matches;
+				res.diff += Math.abs(p1.matchPoints - p2.matchPoints);
+
+				results.push(res);
+
+				//console.warn(player.name, "vs", opponent.name);
 			}
+		}
 
-			//console.warn(player.name, "vs", opponent.name);
+		if (results.length > 0)
+		{
+			var bestMatches = results.reduce((v1, v2) => ((v1.diff <= v2.diff) ? v1 : v2));
+
+			//console.log(player.name, "vs", opponent.name);
+
+			// We succeed to pair the remaining players, create the match
+
+			// Return success
+			return bestMatches;
 		}
 
 		// Return fail (to find an opponent)
@@ -620,35 +614,37 @@ export class TournamentController
 
 		this.generateTiebreaker4();
 
-		var playersToPair = this.players.slice().sort((p1, p2) => {
+		var playersToPair = [];
+
+		for (var i = 0; i < this.players.length; i++)
+		{
+			var player = this.players[i];
+			var matchPoints = this.computePlayerMatchPoints(player);
+			playersToPair.push({
+				"player": player,
+				"matchPoints": matchPoints
+			});
+		}
+
+		playersToPair.sort((v1, v2) => {
 			// Match points DESC
-			var PMP1 = this.computePlayerMatchPoints(p1);
-			var PMP2 = this.computePlayerMatchPoints(p2);
-			if (PMP1 != PMP2)
+			if (v1.matchPoints != v2.matchPoints)
 			{
-				return (PMP2 - PMP1);
+				return (v2.matchPoints - v1.matchPoints);
 			}
 
 			// Tie breaker 4 DESC
-			if (p1.tb4 != p2.tb4)
+			if (v1.player.tb4 != v2.player.tb4)
 			{
-				return (p2.tb4 - p1.tb4);
+				return (v2.player.tb4 - v1.player.tb4);
 			}
 		});
 
-		var matches = this.tryToPairPlayers(playersToPair, false);
+		var result = this.tryToPairPlayers(playersToPair);
 
-		if (!matches)
-		{
-			var msg = "Warning: Player pairing failed. Retrying with rematch.";
-			console.warn(msg);
-			alert(msg);
-			matches = this.tryToPairPlayers(playersToPair, true);
-		}
+		console.log("matches", result.matches);
 
-		console.log("matches", matches);
-
-		this.rounds[round] = matches;
+		this.rounds[round] = result.matches;
 
 		this.selectedRound = round;
 
@@ -787,8 +783,8 @@ export class TournamentController
 		Cookie.saveData("rounds", rounds2);
 		Cookie.saveData("selectedRound", this.selectedRound);
 		
-		console.log(this.players);
-		console.log(this.rounds);
+		console.log("players", this.players);
+		console.log("rounds", this.rounds);
 	}
 
 	load()
