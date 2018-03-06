@@ -1,9 +1,6 @@
-@media (max-width:289px) {
-	body { padding-top:96px; }
-}
 @media (max-width:991px) {
 	@media (min-width:290px) {
-		body { padding-top:56px; }
+		body { padding-top:120px; }
 	}
 }
 @media (min-width:992px) {
