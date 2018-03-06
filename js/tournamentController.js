@@ -495,7 +495,7 @@ export class TournamentController
 		return false;
 	}
 
-	tryToPairPlayers(playersToPair)
+	tryToPairPlayers(playersToPair, onlyPerfectMatches)
 	{
 		// If no players left to pair
 		if (playersToPair.length == 0)
@@ -553,11 +553,16 @@ export class TournamentController
 				continue;
 			}
 
+			if (onlyPerfectMatches && (p1.matchPoints != p2.matchPoints))
+			{
+				continue;
+			}
+
 			// Copy playersToPair
 			var newPlayersToPair = playersToPair.filter(p => (p.player != p2.player));
 
 			// recursive call for trying to pair remaining players, get matches as result
-			var res = this.tryToPairPlayers(newPlayersToPair);
+			var res = this.tryToPairPlayers(newPlayersToPair, onlyPerfectMatches);
 
 			if (res)
 			{
@@ -569,18 +574,12 @@ export class TournamentController
 				res.diff += Math.abs(p1.matchPoints - p2.matchPoints);
 
 				results.push(res);
-
-				//console.warn(player.name, "vs", opponent.name);
 			}
 		}
 
 		if (results.length > 0)
 		{
 			var bestMatches = results.reduce((v1, v2) => ((v1.diff <= v2.diff) ? v1 : v2));
-
-			//console.log(player.name, "vs", opponent.name);
-
-			// We succeed to pair the remaining players, create the match
 
 			// Return success
 			return bestMatches;
@@ -612,6 +611,8 @@ export class TournamentController
 
 		console.log("New round", round + 1);
 
+		var t1 = performance.now();
+
 		this.generateTiebreaker4();
 
 		var playersToPair = [];
@@ -640,7 +641,16 @@ export class TournamentController
 			}
 		});
 
-		var result = this.tryToPairPlayers(playersToPair);
+		var result = this.tryToPairPlayers(playersToPair, true);
+
+		if (!result)
+		{
+			result = this.tryToPairPlayers(playersToPair, false);
+		}
+
+		var t2 = performance.now();
+
+		console.log("Computing time", (t2 - t1));
 
 		console.log("matches", result.matches);
 
