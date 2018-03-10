@@ -1,25 +1,45 @@
 import {HomePageController} from './homePageController.js'
-import {TournamentController} from './tournamentController.js'
+import {SwissTournamentController} from './swissTournamentController.js'
 
-angular
-.module("MTG", ["ngRoute"])
-.config(["$routeProvider", function($routeProvider) {
+var app = angular.module("GatherTournamentApp", ["ngRoute"]);
+
+app.directive('customOnChange', function() {
+  return {
+    restrict: 'A',
+    link: function (scope, element, attrs) {
+      var onChangeHandler = scope.$eval(attrs.customOnChange);
+      element.on('change', onChangeHandler);
+      element.on('$destroy', function() {
+        element.off();
+      });
+
+    }
+  };
+});
+
+app.config(["$routeProvider", function($routeProvider) {
 	$routeProvider
 	.when("/", {
 		templateUrl: "html/homePage.html",
-		controller: "HomePageCtrl"
+		controller: "HomePageCtrl",
+		caseInsensitiveMatch: false
 	})
 	.when("/settings", {
 		templateUrl: "html/settings.html",
-		controller: "HomePageCtrl"
+		controller: "HomePageCtrl",
+		caseInsensitiveMatch: false
 	})
-	.when("/tournament", {
-		templateUrl: "html/tournament.html",
-		controller: "TournamentCtrl"
+	.when("/swiss/:import?", {
+		templateUrl: "html/swissTournament.html",
+		controller: "SwissTournamentCtrl",
+		caseInsensitiveMatch: false
 	})
 	.otherwise({
-		templateUrl: "html/404.html"
+		templateUrl: "html/404.html",
+		caseInsensitiveMatch: false
 	});
-}])
-.controller("HomePageCtrl", ["$scope", HomePageController])
-.controller("TournamentCtrl", ["$scope", TournamentController]);
+}]);
+
+app.controller("HomePageCtrl", ["$scope", HomePageController]);
+
+app.controller("SwissTournamentCtrl", ["$scope", "$route", "$routeParams", "$q", SwissTournamentController]);
