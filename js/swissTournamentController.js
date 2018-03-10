@@ -530,8 +530,6 @@ export class SwissTournamentController
 			var canBye = this.players.every(p => ((this.computeByeCount(p) >= playerByeCount) && (this.computePlayerMatchPoints(p) >= p1.matchPoints)));
 			if (canBye)
 			{
-				//console.log(player.name, "BYE");
-
 				// The bye is valid
 				var byeMatch = this.createMatch(true, p1.player.name);
 
@@ -543,8 +541,6 @@ export class SwissTournamentController
 			}
 			else
 			{
-				//console.warn(player.name, "BYE");
-
 				// Return fail (another player should have the bye)
 				return false;
 			}
@@ -651,11 +647,11 @@ export class SwissTournamentController
 			}
 		});
 
-		var result = this.tryToPairPlayers(playersToPair, true);
+		var result = this.tryToPairPlayers(playersToPair.slice(), true);
 
 		if (!result)
 		{
-			result = this.tryToPairPlayers(playersToPair, false);
+			result = this.tryToPairPlayers(playersToPair.slice(), false);
 		}
 
 		var t2 = performance.now();
