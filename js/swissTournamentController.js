@@ -34,7 +34,7 @@ export class SwissTournamentController
         return {
             "name": playerName,
 			"tb4": (tb4 || 0),
-			"drop": drop
+			"drop": (drop >= 0 ? drop : false)
         };
     }
 
@@ -143,7 +143,7 @@ export class SwissTournamentController
 
 	isCurrentRound()
 	{
-		return (this.selectedRound === (this.roundCount() - 1));
+		return (this.selectedRound === this.currentRound());
 	}
 
 	lowerPowerOfTwo(x)
@@ -550,7 +550,7 @@ export class SwissTournamentController
 		return false;
 	}
 
-	tryToPairPlayers(playersToPair, onlyPerfectMatches)
+	tryToPairPlayers(playersToPair, onlyPerfectMatches, allowAlreadyPlayedMatches)
 	{
 		// If no players left to pair
 		if (playersToPair.length == 0)
@@ -599,7 +599,7 @@ export class SwissTournamentController
 			// Take opponent[o]
 			var p2 = playersToPair[o];
 
-			if (this.matchAlreadyPlayed(p1.player, p2.player))
+			if (!allowAlreadyPlayedMatches && this.matchAlreadyPlayed(p1.player, p2.player))
 			{
 				continue;
 			}
@@ -613,7 +613,7 @@ export class SwissTournamentController
 			var newPlayersToPair = playersToPair.filter(p => (p.player != p2.player));
 
 			// recursive call for trying to pair remaining players, get matches as result
-			var res = this.tryToPairPlayers(newPlayersToPair, onlyPerfectMatches);
+			var res = this.tryToPairPlayers(newPlayersToPair, onlyPerfectMatches, allowAlreadyPlayedMatches);
 
 			if (res)
 			{
@@ -646,6 +646,7 @@ export class SwissTournamentController
 
 		if (nextPlayers.length < 2)
 		{
+			alert("Not enough remaining player!");
 			return;
 		}
 
@@ -694,11 +695,21 @@ export class SwissTournamentController
 			}
 		});
 
-		var result = this.tryToPairPlayers(playersToPair.slice(), true);
+		var result = this.tryToPairPlayers(playersToPair.slice(), true, false);
 
 		if (!result)
 		{
-			result = this.tryToPairPlayers(playersToPair.slice(), false);
+			result = this.tryToPairPlayers(playersToPair.slice(), false, false);
+		}
+
+		if (!result)
+		{
+			result = this.tryToPairPlayers(playersToPair.slice(), true, true);
+		}
+
+		if (!result)
+		{
+			result = this.tryToPairPlayers(playersToPair.slice(), false, true);
 		}
 
 		var t2 = performance.now();
@@ -750,10 +761,10 @@ export class SwissTournamentController
 			this.players.map(player => player.tb4 = 0);
 		}
 
-		var currentRound = this.roundCount() - 1;
+		var currentRound = this.currentRound();
 
 		this.players.map(player => {
-			if (player.drop >= currentRound)
+			if (player.drop > currentRound)
 			{
 				player.drop = false;
 			}

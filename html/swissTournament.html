@@ -32,7 +32,7 @@
 				<table class="table table-lg table-bordered table-striped table-hover">
 					<thead class="thead-dark">
 						<tr>
-							<th class="tc">{{ctrl.sortedPlayers.length}} players</th>
+							<th class="tc" colspan="2">{{ctrl.sortedPlayers.length}} players</th>
 							<th class="tc" ng-if="ctrl.roundCount() == 0">Delete</th>
 							<th class="tc" title="Win" ng-if="ctrl.roundCount() > 0">W</th>
 							<th class="tc" title="Bye" ng-if="ctrl.roundCount() > 0">B</th>
@@ -48,7 +48,10 @@
 					</thead>
 					<tbody>
 						<tr class="pointer" ng-repeat="player in ctrl.sortedPlayers" ng-click="ctrl.toggleSelectPlayer(player)" ng-class="{'bg-info':(ctrl.selectedPlayer == player), 'bg-success':(ctrl.playerMatchesWinDiff(ctrl.selectedPlayer, player, ctrl.selectedRound) > 0), 'bg-danger':(ctrl.playerMatchesWinDiff(ctrl.selectedPlayer, player, ctrl.selectedRound) < 0), 'bg-warning':(ctrl.playerMatchesWinDiff(ctrl.selectedPlayer, player, ctrl.selectedRound) === 0)}">
-							<th class="tl">{{player.name}} <i ng-show="player.drop !== false">(dropped)</i></th>
+							<th class="tl">{{player.name}}</th>
+							<td>
+								<i ng-show="player.drop !== false">dropped</i>
+							</td>
 							<td class="tc" ng-if="ctrl.roundCount() == 0"><button type="button" class="btn btn-md btn-danger" ng-click="ctrl.removePlayer(player)">Delete</button></td>
 							<td class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.computeMatchesWin(player, ctrl.selectedRound)}}</td>
 							<td class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.computeByeCount(player, ctrl.selectedRound)}}</td>
