@@ -338,6 +338,11 @@ export class SwissTournamentController
 		return this.players.find(player => (player.name == playerName));
 	}
 
+	computeMatchesWinPlusBye(player, roundIndexMax)
+	{
+		return this.computeMatchesWin(player, roundIndexMax) + this.computeByeCount(player, roundIndexMax);
+	}
+
 	computeMatchesWin(player, roundIndexMax)
 	{
 		roundIndexMax = (roundIndexMax >= 0 ? roundIndexMax : +Infinity);
@@ -353,6 +358,13 @@ export class SwissTournamentController
 			}
 			return acc;
 		}, 0);
+	}
+
+	hasABye(player, roundIndexMax)
+	{
+		roundIndexMax = (roundIndexMax >= 0 ? roundIndexMax : +Infinity);
+
+		return this.playerMatches(player, null, roundIndexMax).some(match => match.bye);
 	}
 
 	computeByeCount(player, roundIndexMax)
@@ -527,6 +539,11 @@ export class SwissTournamentController
 		}
 
 		return res;
+	}
+
+	forDisplay(value)
+	{
+		return (value ? value : "-");
 	}
 
 	computeOpponentGameWinPercent(player, roundIndexMax)

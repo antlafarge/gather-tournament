@@ -12,3 +12,7 @@
 .btn-1:disabled { color:#6c757d; background-color:transparent; border-color:#6c757d; }
 
 .pointer { cursor:pointer; }
+
+.badge-green { background-color:#070; color:#fff; }
+
+.badge { font-size:1em; }
