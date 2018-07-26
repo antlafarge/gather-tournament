@@ -32,6 +32,7 @@
 				<table class="table table-lg table-bordered table-striped table-hover">
 					<thead class="thead-dark">
 						<tr>
+							<th class="tc">#</th>
 							<th class="tc" colspan="2">{{ctrl.sortedPlayers.length}} players</th>
 							<th class="tc" ng-if="ctrl.roundCount() == 0">Delete</th>
 							<th class="tc" title="Win" ng-if="ctrl.roundCount() > 0">W</th>
@@ -47,10 +48,19 @@
 						</tr>
 					</thead>
 					<tbody>
-						<tr class="pointer" ng-repeat="player in ctrl.sortedPlayers" ng-click="ctrl.toggleSelectPlayer(player)" ng-class="{'bg-info':(ctrl.selectedPlayer == player), 'bg-success':(ctrl.playerMatchesWinDiff(ctrl.selectedPlayer, player, ctrl.selectedRound) > 0), 'bg-danger':(ctrl.playerMatchesWinDiff(ctrl.selectedPlayer, player, ctrl.selectedRound) < 0), 'bg-warning':(ctrl.playerMatchesWinDiff(ctrl.selectedPlayer, player, ctrl.selectedRound) === 0)}">
-							<th class="tl">{{player.name}}</th>
+						<tr class="pointer" ng-repeat="(playerIndex, player) in ctrl.sortedPlayers" ng-click="ctrl.toggleSelectPlayer(player)" ng-class="{'bg-info':(ctrl.selectedPlayer == player), 'bg-success':(ctrl.playerMatchesWinDiff(ctrl.selectedPlayer, player, ctrl.selectedRound) > 0), 'bg-danger':(ctrl.playerMatchesWinDiff(ctrl.selectedPlayer, player, ctrl.selectedRound) < 0), 'bg-warning':(ctrl.playerMatchesWinDiff(ctrl.selectedPlayer, player, ctrl.selectedRound) === 0)}">
+							<th class="tc">
+								<span class="badge badge-pill badge-dark">{{playerIndex + 1}}</span>
+							</th>
+							<th class="tl">
+								<span ng-show="ctrl.isLastRound() && ctrl.currentRoundScoresEntered() && playerIndex === 0">&#x1F947</span>
+								<span ng-show="ctrl.isLastRound() && ctrl.currentRoundScoresEntered() && playerIndex === 1">&#x1F948</span>
+								<span ng-show="ctrl.isLastRound() && ctrl.currentRoundScoresEntered() && playerIndex === 2">&#x1F949</span>
+								{{player.name}}</th>
 							<td>
-								<i ng-show="player.drop !== false">dropped</i>
+								<button class="btn btn-secondary" ng-show="ctrl.canDrop(player.name)" ng-click="ctrl.toggleDropPlayer(player.name); $event.stopPropagation();">Drop</button>
+								<button class="btn btn-danger" ng-show="ctrl.canUndrop(player.name)" ng-click="ctrl.toggleDropPlayer(player.name); $event.stopPropagation();">Undrop</button>
+								<button class="btn btn-light" ng-show="ctrl.playerDropped(player.name) && !ctrl.canUndrop(player.name)" disabled title="dropped after round {{player.drop + 1}}">dropped</span>
 							</td>
 							<td class="tc" ng-if="ctrl.roundCount() == 0"><button type="button" class="btn btn-md btn-danger" ng-click="ctrl.removePlayer(player)">Delete</button></td>
 							<td class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.computeMatchesWin(player, ctrl.selectedRound)}}</td>
@@ -89,7 +99,6 @@
 							<th class="tc">Score</th>
 							<th class="tc">Opponent</th>
 							<th class="tc">Finished</th>
-							<th class="tc" colspan="2">Drop</th>
 						</tr>
 					</thead>
 					<tbody id="matches">
@@ -112,26 +121,10 @@
 									</label>
 								</div>
 							</td>
-							<td class="tr vam" ng-repeat="playerName in [match.playerName, match.opponentName]">
-								<div class="btn-group-toggle" ng-show="(match.finished && ctrl.isCurrentRound()) || (ctrl.selectedRound === ctrl.getPlayerFromName(playerName).drop)">
-									{{playerName}}
-									<label class="btn btn-1" ng-class="{'active':ctrl.playerDropped(playerName)}">
-										<input type="checkbox" autocomplete="off" ng-disabled="!ctrl.isCurrentRound()" ng-click="ctrl.toggleDropPlayer(playerName, ctrl.selectedRound)"> {{ctrl.playerDropped(playerName) ? "Yes" : "No"}}
-									</label>
-								</div>
-							</td>
 						</tr>
 						<tr ng-repeat="match in ctrl.rounds[ctrl.selectedRound]" ng-if="match.bye">
 							<th class="vam">{{match.playerName}}</th>
 							<td class="vam" colspan="3">Bye</td>
-							<td class="tr vam" colspan="2">
-								<div class="btn-group-toggle" ng-show="ctrl.isCurrentRound() || (ctrl.selectedRound === ctrl.getPlayerFromName(match.playerName).drop)">
-									{{match.playerName}}
-									<label class="btn btn-1" ng-class="{'active':ctrl.playerDropped(match.playerName)}">
-										<input type="checkbox" autocomplete="off" ng-disabled="!ctrl.isCurrentRound()" ng-click="ctrl.toggleDropPlayer(match.playerName, ctrl.selectedRound)"> {{ctrl.playerDropped(match.playerName) ? "Yes" : "No"}}
-									</label>
-								</div>
-							</td>
 						</tr>
 					</tbody>
 				</table>

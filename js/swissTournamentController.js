@@ -49,6 +49,58 @@ export class SwissTournamentController
             "finished": (isFinished || false)
         };
 	}
+
+	canDrop(playerName)
+	{
+		var player = this.getPlayerFromName(playerName);
+
+		if (player == null)
+		{
+			throw new Exception("Can't find player");
+		}
+
+		if (player.drop !== false || this.roundCount() === 0 || this.roundCount() === this.roundMaxCount() || this.selectedRound != this.currentRound())
+		{
+			return false;
+		}
+
+		var lastMatch = this.playerMatches(player).pop();
+
+		if (lastMatch && (lastMatch.bye || lastMatch.finished))
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	
+	canUndrop(playerName)
+	{
+		var player = this.getPlayerFromName(playerName);
+
+		if (player == null)
+		{
+			throw new Exception("Can't find player");
+		}
+
+		if (player.drop !== this.currentRound() || this.roundCount() === 0 || this.roundCount() === this.roundMaxCount() || this.selectedRound != this.currentRound())
+		{
+			return false;
+		}
+
+		var lastMatch = this.playerMatches(player).pop();
+
+		if (lastMatch && (lastMatch.bye || lastMatch.finished))
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
 	
 	playerDropped(playerName)
 	{
@@ -59,12 +111,11 @@ export class SwissTournamentController
 			throw new Exception("Can't find player");
 		}
 
-		return (player.drop === this.selectedRound || player.drop > this.selectedRound);
+		return (player.drop !== false) && (player.drop <= this.selectedRound);
 	}
 
-	toggleDropPlayer(playerName, round)
+	toggleDropPlayer(playerName)
 	{
-		console.log("dropPlayer", playerName, round);
 		var player = this.getPlayerFromName(playerName);
 
 		if (player == null)
@@ -72,16 +123,20 @@ export class SwissTournamentController
 			throw new Exception("Can't find player");
 		}
 
+		var round = this.currentRound();
+
 		if (player.drop !== round)
 		{
 			player.drop = round;
-			this.save();
 		}
 		else
 		{
 			player.drop = false;
-			this.save();
 		}
+
+		this.save();
+
+		return false;
 	}
 
 	toggleSelectPlayer(player)
@@ -144,6 +199,11 @@ export class SwissTournamentController
 	isCurrentRound()
 	{
 		return (this.selectedRound === this.currentRound());
+	}
+
+	isLastRound()
+	{
+		return (this.selectedRound === (this.roundMaxCount() - 1));
 	}
 
 	lowerPowerOfTwo(x)
@@ -704,12 +764,19 @@ export class SwissTournamentController
 
 		if (!result)
 		{
+			alert("Pairing round generation failed. Try to re-generate by allowing already played matches.");
 			result = this.tryToPairPlayers(playersToPair.slice(), true, true);
 		}
 
 		if (!result)
 		{
 			result = this.tryToPairPlayers(playersToPair.slice(), false, true);
+		}
+
+		if (!result)
+		{
+			alert("Pairing round generation failed. Please verify the state and the results of the tournament. Sorry for the inconvenience.");
+			return;
 		}
 
 		var t2 = performance.now();
