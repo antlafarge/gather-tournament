@@ -12,7 +12,6 @@ app.directive('customOnChange', function() {
       element.on('$destroy', function() {
         element.off();
       });
-
     }
   };
 });

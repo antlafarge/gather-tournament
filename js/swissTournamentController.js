@@ -29,11 +29,12 @@ export class SwissTournamentController
 		}
 	}
 
-    createPlayer(playerName, tb4)
+    createPlayer(playerName, tb4, drop)
     {
         return {
             "name": playerName,
-            "tb4": (tb4 || 0)
+			"tb4": (tb4 || 0),
+			"drop": drop
         };
     }
 
@@ -47,7 +48,41 @@ export class SwissTournamentController
             "opponentScore": (opponentScore || 0),
             "finished": (isFinished || false)
         };
-    }
+	}
+	
+	playerDropped(playerName)
+	{
+		var player = this.getPlayerFromName(playerName);
+
+		if (player == null)
+		{
+			throw new Exception("Can't find player");
+		}
+
+		return (player.drop === this.selectedRound || player.drop > this.selectedRound);
+	}
+
+	toggleDropPlayer(playerName, round)
+	{
+		console.log("dropPlayer", playerName, round);
+		var player = this.getPlayerFromName(playerName);
+
+		if (player == null)
+		{
+			throw new Exception("Can't find player");
+		}
+
+		if (player.drop !== round)
+		{
+			player.drop = round;
+			this.save();
+		}
+		else
+		{
+			player.drop = false;
+			this.save();
+		}
+	}
 
 	toggleSelectPlayer(player)
 	{
@@ -86,6 +121,11 @@ export class SwissTournamentController
 		this.sortPlayers();
 	}
 
+	currentRound()
+	{
+		return this.roundCount() - 1;
+	}
+
 	roundCount()
 	{
 		return this.rounds.length;
@@ -99,6 +139,11 @@ export class SwissTournamentController
 	roundMaxCountRange()
 	{
 		return new Array(this.roundMaxCount()).fill(0).map((v, i) => (i + 1));
+	}
+
+	isCurrentRound()
+	{
+		return (this.selectedRound === (this.roundCount() - 1));
 	}
 
 	lowerPowerOfTwo(x)
@@ -161,7 +206,7 @@ export class SwissTournamentController
 			}
 
 			// random sort DESC
-			return (Math.random() < 0.5 ? -1 : 1);
+			return (Math.random() > 0.5 ? 1 : -1);
 		});
 	}
 
@@ -463,13 +508,13 @@ export class SwissTournamentController
 		return res;
 	}
 
-	lastRoundScoresEntered()
+	currentRoundScoresEntered()
 	{
-		var lastRound = this.roundCount() - 1;
+		var currentRound = this.currentRound();
 
-		if (lastRound >= 0)
+		if (currentRound >= 0)
 		{
-			var res = this.rounds[lastRound].reduce((acc, match) => {
+			var res = this.rounds[currentRound].reduce((acc, match) => {
 				if ((!match.bye && !match.finished))
 				{
 					acc++;
@@ -495,7 +540,7 @@ export class SwissTournamentController
 		return false;
 	}
 
-	canCancelLastRound()
+	canCancelCurrentRound()
 	{
 		if (this.roundCount() > 0)
 		{
@@ -597,7 +642,9 @@ export class SwissTournamentController
 	
 	newRound()
 	{
-		if (this.players.length < 2)
+		var nextPlayers = this.players.filter(p => (p.drop === false));
+
+		if (nextPlayers.length < 2)
 		{
 			return;
 		}
@@ -609,7 +656,7 @@ export class SwissTournamentController
 			return;
 		}
 
-		if (!this.lastRoundScoresEntered())
+		if (!this.currentRoundScoresEntered())
 		{
 			alert("Please enter all scores.");
 			return;
@@ -623,9 +670,9 @@ export class SwissTournamentController
 
 		var playersToPair = [];
 
-		for (var i = 0; i < this.players.length; i++)
+		for (var i = 0; i < nextPlayers.length; i++)
 		{
-			var player = this.players[i];
+			var player = nextPlayers[i];
 			var matchPoints = this.computePlayerMatchPoints(player);
 			playersToPair.push({
 				"player": player,
@@ -678,13 +725,13 @@ export class SwissTournamentController
 			var player = this.players[i];
 			do
 			{
-				player.tb4 = Math.floor(1000000 * Math.random());
+				player.tb4 = Math.floor(1000 * Math.random());
 			}
 			while (this.players.some(p => ((p.name != player.name) && (p.tb4 == player.tb4))));
 		}
 	}
 
-	cancelLastRound()
+	cancelCurrentRound()
 	{
 		if (!confirm("You will CANCEL THE LAST ROUND matches. Are you sure?"))
 		{
@@ -703,11 +750,18 @@ export class SwissTournamentController
 			this.players.map(player => player.tb4 = 0);
 		}
 
-		this.sortPlayers();
+		var currentRound = this.roundCount() - 1;
+
+		this.players.map(player => {
+			if (player.drop >= currentRound)
+			{
+				player.drop = false;
+			}
+		});
 
 		if (this.selectedRound >= this.roundCount())
 		{
-			this.selectedRound = Math.max(0, this.roundCount() - 1);
+			this.selectedRound = Math.max(0, currentRound);
 		}
 		
 		this.sortPlayers();
@@ -832,12 +886,12 @@ export class SwissTournamentController
 
 	serializePlayers()
 	{
-		return this.players.map(p => [p.name, p.tb4]);
+		return this.players.map(p => [p.name, p.tb4, p.drop]);
 	}
 
 	deserializePlayers(players)
 	{
-		return players.map(p => this.createPlayer(p[0], p[1]));
+		return players.map(p => this.createPlayer(p[0], p[1], p[2]));
 	}
 
 	serializeRounds()
