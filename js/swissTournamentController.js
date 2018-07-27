@@ -649,7 +649,7 @@ export class SwissTournamentController
 			var playerByeCount = this.computeByeCount(p1.player);
 
 			// Check if there is another player who should have the bye
-			var canBye = this.players.every(p => ((this.computeByeCount(p) >= playerByeCount) && (this.computePlayerMatchPoints(p) >= p1.matchPoints)));
+			var canBye = this.players.every(p => (p.drop !== false || ((this.computeByeCount(p) >= playerByeCount) && (this.computePlayerMatchPoints(p) >= p1.matchPoints))));
 			if (canBye)
 			{
 				// The bye is valid
