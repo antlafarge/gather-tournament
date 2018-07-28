@@ -111,8 +111,6 @@ export class SwissTournamentController
 			throw new Exception("Can't find player");
 		}
 
-		console.log(playerName, (player.drop !== false) && (player.drop <= this.selectedRound))
-
 		return (player.drop !== false) && (player.drop <= this.selectedRound);
 	}
 
