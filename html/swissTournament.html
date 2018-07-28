@@ -53,7 +53,8 @@
 								<span ng-show="ctrl.isLastRound() && ctrl.currentRoundScoresEntered() && playerIndex === 0">&#x1F947</span>
 								<span ng-show="ctrl.isLastRound() && ctrl.currentRoundScoresEntered() && playerIndex === 1">&#x1F948</span>
 								<span ng-show="ctrl.isLastRound() && ctrl.currentRoundScoresEntered() && playerIndex === 2">&#x1F949</span>
-								{{player.name}}</th>
+								{{player.name}}
+							</th>
 							<td>
 								<button class="btn btn-secondary" ng-show="ctrl.canDrop(player.name)" ng-click="ctrl.toggleDropPlayer(player.name); $event.stopPropagation();">Drop</button>
 								<button class="btn btn-danger" ng-show="ctrl.canUndrop(player.name)" ng-click="ctrl.toggleDropPlayer(player.name); $event.stopPropagation();">Undrop</button>
