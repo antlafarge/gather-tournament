@@ -1,5 +1,12 @@
 import {Cookie} from './cookie.js'
 
+export let MatchState =
+{
+	Pending: 0,
+	Finished: 1,
+	Bye: 2
+};
+
 export class SwissTournamentController
 {
 	constructor($scope, $route, $routeParams, $q)
@@ -38,9 +45,10 @@ export class SwissTournamentController
         };
     }
 
-    createMatch(isBye, playerName, opponentName, playerScore, opponentScore, isFinished)
+    createMatch(isBye, playerName, opponentName, playerScore, opponentScore, isFinished, state)
     {
         return {
+			"state": (state || MatchState.Pending),
             "bye": (isBye || false),
             "playerName": (playerName || ""),
             "opponentName": (opponentName || ""),
@@ -657,75 +665,68 @@ export class SwissTournamentController
 		return false;
 	}
 
-	tryToPairPlayers(playersToPair)
+	computeMinimalPossibleScore(players)
 	{
-		// If no players left to pair
-		if (playersToPair.length == 0)
+		let minScore = 0;
+		for (var p = 0; p < players.length; p += 2) // We ignore the last player if players.length is odd (bye)
 		{
-			// Return empty list of matches
-			return {
-				"diff": 0,
-				"matches": []
-			};
-		}
+			var player = players[p];
+			var opponent = players[p + 1]
 
-		this.passes++;
-		
-		// Take first player from playersToPair, remove player from playersToPair
-		var p1 = playersToPair.shift();
-
-		var results = [];
-
-		// Parse opponents
-		for (var o = 0; o < playersToPair.length; o++)
-		{
-			// Take opponent[o]
-			var p2 = playersToPair[o];
-
-			// Copy playersToPair
-			var newPlayersToPair = playersToPair.filter(p => p != p2);
-
-			// recursive call for trying to pair remaining players, get matches as result
-			var res = this.tryToPairPlayers(newPlayersToPair);
-
-			if (res)
+			if (player.matchPoints != opponent.matchPoints)
 			{
-				res.diff += Math.abs(p1.matchPoints - p2.matchPoints);
-
-				res.diff += (p1.matchPoints + p2.matchPoints);
-	
-				if (p2.potentialOpponents.indexOf(p1.player) === -1)
-				{
-					res.diff += (10 * (p1.matchPoints + p2.matchPoints));
-				}
-	
-				// Add match to matches
-				var match = this.createMatch(false, p1.player.name, p2.player.name);
-				res.matches.unshift(match);
-
-				results.push(res);
+				minScore += Math.max(player.matchPoints, opponent.matchPoints) + Math.abs(player.matchPoints - opponent.matchPoints);
 			}
 		}
+		return minScore;
+	}
 
-		if (results.length > 0)
+	tryToPairPlayers(playersToPair, result, persistantData, deep)
+	{
+		return new Promise((resolve, reject) =>
 		{
-			var bestResult = results.reduce((r1, r2) => ((r1.diff > r2.diff) ? r2 : r1));
+			let computingWorker = new Worker("js/swissTournamentWorker.js");
 
-			// Return success
-			return bestResult;
-		}
+			computingWorker.onmessage = (e) =>
+			{
+				let CMD = e.data.CMD;
+				if (CMD === "END")
+				{
+					let res = e.data.res;
+					let result = e.data.result;
+					let persistantData = e.data.persistantData;
 
-		// Return fail (to find an opponent)
-		return false;
+					if (!res)
+					{
+						reject("Fail to create the matches");
+					}
+
+					resolve({
+						result,
+						persistantData
+					});
+				}
+				else
+				{
+					console.log("Computing Webworker:", e.data);
+				}
+			};
+
+			computingWorker.postMessage({
+				"CMD": "START",
+				"playersToPair": playersToPair,
+				"result": result,
+				"persistantData": persistantData,
+				"deep": deep
+			});
+		});
 	}
 	
 	newRound()
 	{
-		this.passes = 0;
+		let time1 = performance.now();
 
-		var time1 = performance.now();
-
-		var round = this.roundCount();
+		let round = this.roundCount();
 
 		if (round >= this.roundMaxCount())
 		{
@@ -738,7 +739,7 @@ export class SwissTournamentController
 			return;
 		}
 
-		var playersToPair = this.players.filter(player => (player.drop === false));
+		let playersToPair = this.players.filter(player => (player.drop === false));
 		
 		if (playersToPair.length < 2)
 		{
@@ -760,10 +761,10 @@ export class SwissTournamentController
 		{
 			playersToPair.forEach(playerInfos => {
 				playerInfos.canBye = playersToPair.every(opponentInfos => {
-					var playerDropped = (opponentInfos.player.drop !== false);
-					var hasMinByeCount = (opponentInfos.byeCount > playerInfos.byeCount);
-					var hasEqualByeCount = (opponentInfos.byeCount === playerInfos.byeCount);
-					var hasMinMatchPoints = (opponentInfos.matchPoints >= playerInfos.matchPoints);
+					let playerDropped = (opponentInfos.player.drop !== false);
+					let hasMinByeCount = (opponentInfos.byeCount > playerInfos.byeCount);
+					let hasEqualByeCount = (opponentInfos.byeCount === playerInfos.byeCount);
+					let hasMinMatchPoints = (opponentInfos.matchPoints >= playerInfos.matchPoints);
 					return (playerDropped || hasMinByeCount || (hasEqualByeCount && hasMinMatchPoints));
 				});
 			});
@@ -771,76 +772,155 @@ export class SwissTournamentController
 
 		this.generateTiebreaker4();
 
-		playersToPair = playersToPair.sort((p1, p2) => (p2.matchPoints - p1.matchPoints) || (p1.player.tb4 - p2.player.tb4)); // Sort Match points DESC, Tie breaker 4 DESC
+		playersToPair = playersToPair.sort((p1, p2) => (p2.matchPoints - p1.matchPoints) || (p1.player.tb4 - p2.player.tb4) || (p1.player.name.localeCompare(p2.player.name))); // Sort Match points DESC, Tie breaker 4 DESC
 
 		console.log("playersToPair", playersToPair);
 
-		var bye = (playersToPair.length % 2 === 1);
+		let bye = (playersToPair.length % 2 === 1);
 
-		var result;
+		let result = {
+			"score": 0,
+			"matches": []
+		};
+
+		let persistantData = {
+			"minScore": +Infinity,
+			"passes": 0,
+			"skips": {},
+			"timeout": 10, // seconds
+			"minimalPossibleScore": 0
+		};
+
+		let pairingPromise;
 
 		if (bye)
 		{
-			var playersTiedToBye = playersToPair.filter(p => p.canBye === true).reverse();
-			playersTiedToBye.forEach(byePlayer => {
-				var newPlayersToPair = playersToPair.filter(p => p != byePlayer);
-				var result2 = this.tryToPairPlayers(newPlayersToPair);
-				result2.byePlayer = byePlayer;
-				if (result2)
+			let playersTiedToBye = playersToPair.filter(p => p.canBye === true).reverse();
+			let promises = [];
+			let maxThreads = navigator && (navigator.hardwareConcurrency ? navigator.hardwareConcurrency : 2);
+
+			let launchNext = {
+				"f": null
+			};
+
+			launchNext.f = () =>
+			{
+				let byePlayer = playersTiedToBye.shift();
+
+				if (byePlayer)
 				{
-					if (!result || result2.diff < result.diff)
+					let promise2Resolve;
+					// let promise2Reject;
+					let promise2 = new Promise((resolve, reject) =>
 					{
-						result = result2;
-					}
+						promise2Resolve = resolve;
+						// promise2Reject = reject;
+					});
+	
+					let newPlayersToPair = playersToPair.filter(p => p != byePlayer);
+					let result2 = {
+						"score": 0,
+						"matches": []
+					};
+					persistantData.minimalPossibleScore = this.computeMinimalPossibleScore(newPlayersToPair);
+					this.tryToPairPlayers(newPlayersToPair, result2, persistantData, 0)
+						.then((data) =>
+					{
+						launchNext.f();
+						data.byePlayer = byePlayer;
+						promise2Resolve(data);
+					})
+						.catch(error =>
+					{
+						launchNext.f();
+						promise2Resolve(null);
+					})
+	
+					promises.push(promise2);
 				}
+			}
+
+			for (var i = 0; i < maxThreads; i++)
+			{
+				launchNext.f();
+			}
+
+			pairingPromise = Promise.all(promises).then(results =>
+			{
+				let bestData = {
+					result: null,
+					persistantData: null
+				};
+				results.forEach(data =>
+				{
+					if (data)
+					{
+						let result = data.result;
+						let persistantData = data.persistantData;
+						if (!bestData.result || result.score < bestData.result.score)
+						{
+							bestData.result = result;
+							bestData.byePlayer = data.byePlayer;
+							bestData.persistantData = persistantData;
+						}
+					}
+				});
+				let byeMatch = this.createMatch(true, bestData.byePlayer.player.name);
+				bestData.result.matches.push(byeMatch);
+				return bestData;
 			});
-			var byeMatch = this.createMatch(true, result.byePlayer.player.name);
-			result.matches.push(byeMatch);
 		}
 		else
 		{
-			result = this.tryToPairPlayers(playersToPair);
+			persistantData.minimalPossibleScore = this.computeMinimalPossibleScore(playersToPair);
+			pairingPromise = this.tryToPairPlayers(playersToPair, result, persistantData, 0);
 		}
 
-		console.log("R", this.passes);
-
-		if (result === false)
+		pairingPromise
+			.then(data =>
 		{
-			alert("Fail to create the matches");
-			console.warn("Fail to create the matches");
-			return;
-		}
+			let result = data.result;
+			let persistantData = data.persistantData;
 
-		var time2 = performance.now();
+			let time2 = performance.now();
 
-		var generationTime = time2 - time1;
-		
-		console.log("New round", round + 1);
+			let generationTime = time2 - time1;
 
-		console.log("Pairing generation time:", generationTime);
+			console.log("New round", round + 1);
 
-		console.log("result", result);
+			console.log("Pairing generation time:", generationTime);
 
-		this.rounds[round] = result.matches;
+			console.log("Pairing generation data:", persistantData);
 
-		this.selectedRound = round;
+			console.log("result", result);
 
-		this.generateTiebreaker4();
+			this.rounds[round] = result.matches;
 
-		this.sortPlayers();
+			this.selectedRound = round;
 
-		this.save();
+			this.generateTiebreaker4();
+
+			this.sortPlayers();
+
+			this.save();
+
+			this.scope.$apply();
+		})
+			.catch(error =>
+		{
+			console.error(error);
+			alert(error);
+		});
 	}
 
 	generateTiebreaker4()
 	{
-		// Regenerate Tiebreaker 4
 		for (var i = 0; i < this.players.length; i++)
 		{
 			var player = this.players[i];
 			do
 			{
-				player.tb4 = Math.floor(1000 * Math.random());
+				player.tb4 = Math.floor(1001 * Math.random());
 			}
 			while (this.players.some(p => ((p.name != player.name) && (p.tb4 == player.tb4))));
 		}
@@ -963,8 +1043,8 @@ export class SwissTournamentController
 
 	save()
 	{
-		var players2 = this.serializePlayers();
-		var rounds2 = this.serializeRounds();
+		let players2 = this.serializePlayers();
+		let rounds2 = this.serializeRounds();
 
 		Cookie.saveData("players", players2);
 		Cookie.saveData("rounds", rounds2);
@@ -972,7 +1052,7 @@ export class SwissTournamentController
 		
 		console.log("save");
 
-		console.log("players", );
+		console.log("players", this.players);
 		console.log("rounds", this.rounds);
 	}
 
@@ -999,28 +1079,41 @@ export class SwissTournamentController
 		var selectedRoundT = Cookie.loadData("selectedRound");
 		if (selectedRoundT)
 		{
-			this.selectedRound = selectedRoundT;
+			this.selectedRound = parseInt(selectedRoundT);
 		}
 	}
 
 	serializePlayers()
 	{
-		return this.players.map(p => [p.name, p.tb4, p.drop]);
+		return this.players.map(p => p.name + '/' + p.tb4 + (p.drop !== false ? ('/' + p.drop) : '')).join('|');
 	}
 
 	deserializePlayers(players)
 	{
-		return players.map(p => this.createPlayer(p[0], p[1], p[2]));
+		return players.split('|').map(p2 =>
+		{
+			let p = p2.split('/');
+			return this.createPlayer(p[0], p[1], (p[2] !== undefined ? p[2] : false))
+		});
 	}
 
 	serializeRounds()
 	{
-		return this.rounds.map(r => r.map(m => [m.bye, m.playerName, m.opponentName, m.playerScore, m.opponentScore, m.finished]));
+		return this.rounds.map(r => r.map(m => m.playerName + '/' + m.playerScore + (m.bye ? '': ('/' + m.opponentScore + '/' + m.opponentName + '/'))).join('{')).join('}');
 	}
 
 	deserializeRounds(matches)
 	{
-		return matches.map(r => r.map(m => this.createMatch(m[0], m[1], m[2], m[3], m[4], m[5])));
+		var rounds = matches.split('}').map(r => r.split('{').map(m2 =>
+		{
+			let m = m2.split('/');
+			return this.createMatch((m[3] ? false : true), m[0], m[3], parseInt(m[1]), parseInt(m[2]), true);
+		}));
+		if (rounds.length > 0)
+		{
+			rounds.map(r => r.map(m => m.bye ? (m.finished = false) : null));
+		}
+		return rounds;
 	}
 
 	export()

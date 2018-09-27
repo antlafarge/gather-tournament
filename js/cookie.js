@@ -35,7 +35,7 @@ export class Cookie
 
     static saveData(name, data)
     {
-        this.saveCookie(name, angular.toJson(data));
+        this.saveCookie(name, data);
     }
 
     static loadData(name)
@@ -45,6 +45,6 @@ export class Cookie
         {
             return null;
         }
-        return JSON.parse(data);
+        return data;
     }
 }

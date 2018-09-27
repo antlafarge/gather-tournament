@@ -8,8 +8,8 @@
 				<div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
 					<a class="dropdown-item" href="" ng-click="ctrl.reset()">New tournament</a>
 					<div class="dropdown-divider"></div>
-					<a class="dropdown-item" href="" ng-click="ctrl.newRound()" ng-class="{'disabled':!ctrl.canCreateNewRound()}" ng-disabled="!ctrl.canCreateNewRound()">New round</a>
-					<a class="dropdown-item" href="" ng-click="ctrl.cancelLastRound()" ng-class="{'disabled':!ctrl.canCancelLastRound()}" ng-disabled="!ctrl.canCancelLastRound()">Cancel current round</a>
+					<a class="dropdown-item" href="" ng-click="ctrl.newRound()" ng-class="{'disabled':(!ctrl.canCreateNewRound())}" ng-disabled="!ctrl.canCreateNewRound()">New round</a>
+					<a class="dropdown-item" href="" ng-click="ctrl.cancelLastRound()" ng-class="{'disabled':(!ctrl.canCancelLastRound())}" ng-disabled="(!ctrl.canCancelLastRound())">Cancel current round</a>
 					<div class="dropdown-divider"></div>
 					<a class="dropdown-item" id="importButton" href="" ng-click="ctrl.import()">Import</a>
 					<input type="file" accept=".json" id="importFile" ng-show="0" custom-on-change=" ctrl.importFileChange.bind(ctrl)">
@@ -50,13 +50,10 @@
 						<tr class="pointer" ng-repeat="(playerIndex, player) in ctrl.sortedPlayers" ng-click="ctrl.toggleSelectPlayer(player)" ng-class="{'bg-info':(ctrl.selectedPlayer == player), 'bg-success':(ctrl.playerMatchesWinDiff(ctrl.selectedPlayer, player, ctrl.selectedRound) > 0), 'bg-danger':(ctrl.playerMatchesWinDiff(ctrl.selectedPlayer, player, ctrl.selectedRound) < 0), 'bg-warning':(ctrl.playerMatchesWinDiff(ctrl.selectedPlayer, player, ctrl.selectedRound) === 0)}">
 							<th class="tc">{{playerIndex + 1}}</th>
 							<th class="tl">
-								<span ng-show="ctrl.canDisplayMedals()">
-									<span ng-show="playerIndex === 0">&#x1F947</span>
-									<span ng-show="playerIndex === 1">&#x1F948</span>
-									<span ng-show="playerIndex === 2">&#x1F949</span>
-								</span>
-								{{player.name}}
-							</th>
+								<span ng-show="ctrl.isLastRound() && ctrl.currentRoundScoresEntered() && playerIndex === 0">&#x1F947</span>
+								<span ng-show="ctrl.isLastRound() && ctrl.currentRoundScoresEntered() && playerIndex === 1">&#x1F948</span>
+								<span ng-show="ctrl.isLastRound() && ctrl.currentRoundScoresEntered() && playerIndex === 2">&#x1F949</span>
+								{{player.name}}</th>
 							<td>
 								<button class="btn btn-secondary" ng-show="ctrl.canDrop(player.name)" ng-click="ctrl.toggleDropPlayer(player.name); $event.stopPropagation();">Drop</button>
 								<button class="btn btn-danger" ng-show="ctrl.canUndrop(player.name)" ng-click="ctrl.toggleDropPlayer(player.name); $event.stopPropagation();">Undrop</button>
@@ -107,11 +104,11 @@
 							<th class="vam">{{match.playerName}}</th>
 							<td class="vam">
 								<div class="input-group input-group-lg">
-									<input type="number" min="0" max="3" class="form-control" ng-model="match.playerScore" ng-change="ctrl.updateScore(match)" ng-disabled="match.finished">
+									<input type="number" class="form-control" ng-model="match.playerScore" ng-change="ctrl.updateScore(match)" ng-disabled="match.finished">
 									<div class="input-group-prepend input-group-append">
 										<span class="input-group-text">vs</span>
 									</div>
-									<input type="number" min="0" max="3" class="form-control" ng-model="match.opponentScore" ng-change="ctrl.updateScore(match)" ng-disabled="match.finished">
+									<input type="number" class="form-control" ng-model="match.opponentScore" ng-change="ctrl.updateScore(match)" ng-disabled="match.finished">
 								</div>
 							</td>
 							<th class="vam">{{match.opponentName}}</th>
