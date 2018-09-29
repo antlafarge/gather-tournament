@@ -1,3 +1,96 @@
+let MatchState =
+{
+    Pending: 0,
+    Finished: 1,
+    Bye: 2
+};
+
+function createMatch(matchState, playerName, opponentName, playerScore, opponentScore)
+{
+    let match = newObject();
+    match.state = (matchState || MatchState.Pending);
+    match.p1 = (playerName || "");
+    match.p2 = (opponentName || "");
+    match.score1 = (playerScore || 0);
+    match.score2 = (opponentScore || 0);
+    return match;
+}
+
+// Objects pool
+
+let objectsPool = [];
+let objectsCount = 0;
+
+function newObject()
+{
+    let object;
+
+    if (objectsPool.length > 0)
+    {
+        object = objectsPool.pop();
+    }
+    else
+    {
+        object = {};
+        objectsCount++;
+    }
+
+    return object;
+}
+
+function deleteObject(object)
+{
+    for (var member in object)
+    {
+        delete object[member];
+    }
+    objectsPool.push(object);
+}
+
+// Arrays pool
+
+let arraysPool = [];
+let arraysCount = 0;
+
+function newArray(length)
+{
+    let array;
+
+    if (arraysPool.length > 0)
+    {
+        array = arraysPool.pop();
+    }
+    else
+    {
+        array = [];
+        arraysCount++;
+    }
+
+    if (length > 0)
+    {
+        array.length = length;
+    }
+
+    return array;
+}
+
+function deleteArray(array)
+{
+    array.length = 0;
+    arraysPool.push(array);
+}
+
+function copyArray(from, to)
+{
+    to.length = from.length;
+    for (let i = 0; i < from.length; i++)
+    {
+        to[i] = from[i];
+    }
+}
+
+// Init webworker
+
 let port = self;
 
 port.onmessage = (ev) =>
@@ -23,23 +116,13 @@ port.onmessage = (ev) =>
     // }
 }
 
+// Init global variables
+
 let startPerf = performance.now();
 let lastPerf = performance.now();
 
 let stopRequired = false;
 let minimalScoreReached = false;
-
-function createMatch(isBye, playerName, opponentName, playerScore, opponentScore, isFinished)
-{
-    return {
-        "bye": (isBye || false),
-        "playerName": (playerName || ""),
-        "opponentName": (opponentName || ""),
-        "playerScore": (playerScore || 0),
-        "opponentScore": (opponentScore || 0),
-        "finished": (isFinished || false)
-    };
-}
 
 // Try to pair 2 players, and call recursively to create as many matches as necessary
 // We take the first player, and search the best opponent (by scoring the match, and accumulating the score of the recursively generated matches)
@@ -53,6 +136,8 @@ function tryToPairPlayers(playersToPair, result, persistantData, deep)
     // Post log messages
     if (perf - lastPerf > 1000)
     {
+        persistantData.objectsCount = objectsCount;
+        persistantData.arraysCount = arraysCount;
         port.postMessage(persistantData);
         lastPerf = perf;
     }
@@ -73,20 +158,9 @@ function tryToPairPlayers(playersToPair, result, persistantData, deep)
 
     let bestResult;
 
-    let neverPlayedAnddifferentMatchPointsOpponents = [];
-    let alreadyPlayedAndSameMatchPointsOpponents = [];
-    let alreadyPlayedAndDifferentMatchPointsOpponents = [];
-
-    // {
-    // 	let neverPlayedOpponents = playersToPair.filter(o => p1.potentialOpponents.indexOf(o.player) !== -1);
-    // 	let alreadyPlayedOpponents = playersToPair.filter(o => p1.potentialOpponents.indexOf(o.player) === -1);
-    // 	let sameMatchPointsOpponnents = playersToPair.filter(o => p1.matchPoints === o.matchPoints);
-    // 	let differentMatchPointsOpponnents = playersToPair.filter(o => p1.matchPoints !== o.matchPoints);
-    // 	neverPlayedAndsameMatchPointsOpponents = neverPlayedOpponents.filter(o => sameMatchPointsOpponnents.indexOf(o) !== -1);
-    // 	neverPlayedAnddifferentMatchPointsOpponents = neverPlayedOpponents.filter(o => differentMatchPointsOpponnents.indexOf(o) !== -1);
-    // 	alreadyPlayedAndSameMatchPointsOpponents = alreadyPlayedOpponents.filter(o => sameMatchPointsOpponnents.indexOf(o) !== -1);
-    // 	alreadyPlayedAndDifferentMatchPointsOpponents = alreadyPlayedOpponents.filter(o => differentMatchPointsOpponnents.indexOf(o) !== -1);
-    // }
+    let neverPlayedAnddifferentMatchPointsOpponents = newArray();
+    let alreadyPlayedAndSameMatchPointsOpponents = newArray();
+    let alreadyPlayedAndDifferentMatchPointsOpponents = newArray();
 
     let playersToPair2 = playersToPair;
 
@@ -158,7 +232,7 @@ function tryToPairPlayers(playersToPair, result, persistantData, deep)
             }
             let currentScore = result.score + score;
 
-            if (stopRequired || minimalScoreReached || currentScore >= persistantData.minScore)
+            if (stopRequired || minimalScoreReached || currentScore >= persistantData.minScore || persistantData.onlyPerfect && score > persistantData.minimalPossibleScore.byMatch[deep])
             {
                 if (!persistantData.skips[deep])
                 {
@@ -169,10 +243,10 @@ function tryToPairPlayers(playersToPair, result, persistantData, deep)
                 continue;
             }
 
-            let result2 = {
-                "score": currentScore,
-                "matches": result.matches.slice()
-            };
+            let result2 = newObject();
+            result2.score = currentScore;
+            result2.matches = newArray(result.matches.length);
+            copyArray(result.matches, result2.matches);
 
             // Add match to matches
             let match = createMatch(false, p1.player.name, p2.player.name);
@@ -180,7 +254,9 @@ function tryToPairPlayers(playersToPair, result, persistantData, deep)
             result2.matches.push(match);
 
             // Copy playersToPair
-            let newPlayersToPair = playersToPair.filter(p => p != p2);
+            let newPlayersToPair = newArray();
+            copyArray(playersToPair, newPlayersToPair);
+            newPlayersToPair.splice(o, 1);
 
             if (newPlayersToPair.length > 0)
             {
@@ -196,25 +272,56 @@ function tryToPairPlayers(playersToPair, result, persistantData, deep)
                     }
                     persistantData.skips[deep]++;
 
+                    for (var i = result.matches.length; i < result2.matches.length; i++)
+                    {
+                        deleteObject(result2.matches[i]);
+                    }
+                    deleteArray(result2.matches);
+                    deleteObject(result2);
+                    result2 = null;
+                    deleteArray(newPlayersToPair);
                     continue;
                 }
 
+                if (bestResult)
+                {
+                    for (var i = result.matches.length; i < result2.matches.length; i++)
+                    {
+                        deleteObject(bestResult.matches[i]);
+                    }
+                    deleteArray(bestResult.matches);
+                    deleteObject(bestResult);
+                    bestResult = null;
+                }
                 bestResult = result2;
             }
             else // newPlayersToPair.length == 0
             {
+                if (bestResult)
+                {
+                    for (var i = result.matches.length; i < result2.matches.length; i++)
+                    {
+                        deleteObject(bestResult.matches[i]);
+                    }
+                    deleteArray(bestResult.matches);
+                    deleteObject(bestResult);
+                    bestResult = null;
+                }
                 bestResult = result2;
 
                 if (bestResult.score < persistantData.minScore)
                 {
                     persistantData.minScore = bestResult.score;
+                    port.postMessage(persistantData);
                 }
 
-                if (currentScore == persistantData.minimalPossibleScore)
+                if (currentScore == persistantData.minimalPossibleScore.total)
                 {
                     minimalScoreReached = true;
                 }
             }
+
+            deleteArray(newPlayersToPair);
 
             finished = true;
         }
@@ -227,14 +334,17 @@ function tryToPairPlayers(playersToPair, result, persistantData, deep)
                 neverPlayedAnddifferentMatchPointsOpponents = null;
                 break;
             case 1: // Prepare to 3rd path
+                deleteArray(playersToPair2);
                 playersToPair2 = alreadyPlayedAndSameMatchPointsOpponents;
                 alreadyPlayedAndSameMatchPointsOpponents = null;
                 break;
             case 2: // Prepare to 4th pass
+                deleteArray(playersToPair2);
                 playersToPair2 = alreadyPlayedAndDifferentMatchPointsOpponents;
                 alreadyPlayedAndDifferentMatchPointsOpponents = null;
                 break;
             default:
+                deleteArray(playersToPair2);
                 break;
         }
     }

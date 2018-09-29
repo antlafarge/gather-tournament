@@ -45,16 +45,14 @@ export class SwissTournamentController
         };
     }
 
-    createMatch(isBye, playerName, opponentName, playerScore, opponentScore, isFinished, state)
+	createMatch(matchState, playerName, opponentName, playerScore, opponentScore)
     {
         return {
-			"state": (state || MatchState.Pending),
-            "bye": (isBye || false),
-            "playerName": (playerName || ""),
-            "opponentName": (opponentName || ""),
-            "playerScore": (playerScore || 0),
-            "opponentScore": (opponentScore || 0),
-            "finished": (isFinished || false)
+			"state": (matchState || MatchState.Pending),
+            "p1": (playerName || ""),
+            "p2": (opponentName || ""),
+            "score1": (playerScore || 0),
+            "score2": (opponentScore || 0)
         };
 	}
 
@@ -74,7 +72,7 @@ export class SwissTournamentController
 
 		var lastMatch = this.playerMatches(player).pop();
 
-		if (lastMatch && (lastMatch.bye || lastMatch.finished))
+		if (lastMatch && lastMatch.state !== MatchState.Pending)
 		{
 			return true;
 		}
@@ -100,7 +98,7 @@ export class SwissTournamentController
 
 		var lastMatch = this.playerMatches(player).pop();
 
-		if (lastMatch && (lastMatch.bye || lastMatch.finished))
+		if (lastMatch && lastMatch.state !== MatchState.Pending)
 		{
 			return true;
 		}
@@ -120,6 +118,38 @@ export class SwissTournamentController
 		}
 
 		return (player.drop !== false) && (player.drop <= this.selectedRound);
+	}
+
+	randChar()
+	{
+		return String.fromCharCode(65 + Math.floor(Math.random() * 26));
+	}
+
+	add100RandomPlayers()
+	{
+		console.log("add100RandomPlayers...");
+		for (var i = 0; i < 100; i++)
+		{
+			let playerName = "player_" + this.randChar() + this.randChar() + this.randChar() + this.randChar();
+			this.addPlayer(playerName);
+		}
+		console.log("add100RandomPlayers OK");
+	}
+
+	fillRandomScores()
+	{
+		console.log("fillRandomScores...");
+		let round = this.rounds.length - 1;
+		this.rounds[round].forEach(match =>
+		{
+			if (match.state === MatchState.Pending)
+			{
+				match.state = MatchState.Finished;
+				match.score1 = Math.floor((Math.random() * 3));
+				match.score2 = Math.floor((Math.random() * 3));
+			}
+		});
+		console.log("fillRandomScores OK");
 	}
 
 	toggleDropPlayer(playerName)
@@ -317,7 +347,7 @@ export class SwissTournamentController
 		var filteredRounds = this.rounds.map((round, index) => {
 			if (index <= roundIndexMax)
 			{
-				return round.filter(match => (((match.playerName == p1.name && (!p2 || match.opponentName == p2.name)) || (match.opponentName == p1.name && (!p2 || match.playerName == p2.name)))));
+				return round.filter(match => (((match.p1 == p1.name && (!p2 || match.p2 == p2.name)) || (match.p2 == p1.name && (!p2 || match.p1 == p2.name)))));
 			}
 			return [];
 		});
@@ -337,17 +367,17 @@ export class SwissTournamentController
 			return false;
 		}
 
-		if (playerMatches.every(match => (!match.finished)))
+		if (playerMatches.every(match => match.state !== MatchState.Finished))
 		{
 			return false;
 		}
 
 		var winDiff = playerMatches.reduce((acc, match) => {
-			if ((match.playerName == p1.name && match.playerScore > match.opponentScore) || (match.opponentName == p1.name && match.opponentScore > match.playerScore))
+			if ((match.p1 == p1.name && match.score1 > match.score2) || (match.p2 == p1.name && match.score2 > match.score1))
 			{
 				acc++;
 			}
-			else if ((match.playerName == p2.name && match.playerScore > match.opponentScore) || (match.opponentName == p2.name && match.opponentScore > match.playerScore))
+			else if ((match.p1 == p2.name && match.score1 > match.score2) || (match.p2 == p2.name && match.score2 > match.score1))
 			{
 				acc--;
 			}
@@ -383,10 +413,10 @@ export class SwissTournamentController
 		roundIndexMax = (roundIndexMax >= 0 ? roundIndexMax : +Infinity);
 
 		return this.playerMatches(player, null, roundIndexMax).reduce((acc, match) => {
-			if (match.finished)
+			if (match.state === MatchState.Finished)
 			{
-				if ((match.playerName == player.name && match.playerScore > match.opponentScore)
-				|| (match.opponentName == player.name && match.playerScore < match.opponentScore))
+				if ((match.p1 == player.name && match.score1 > match.score2)
+				|| (match.p2 == player.name && match.score1 < match.score2))
 				{
 					acc += 1;
 				}
@@ -399,7 +429,7 @@ export class SwissTournamentController
 	{
 		roundIndexMax = (roundIndexMax >= 0 ? roundIndexMax : +Infinity);
 
-		return this.playerMatches(player, null, roundIndexMax).some(match => match.bye);
+		return this.playerMatches(player, null, roundIndexMax).some(match => match.state === MatchState.Bye);
 	}
 
 	computeByeCount(player, roundIndexMax)
@@ -407,7 +437,7 @@ export class SwissTournamentController
 		roundIndexMax = (roundIndexMax >= 0 ? roundIndexMax : +Infinity);
 
 		return this.playerMatches(player, null, roundIndexMax).reduce((acc, match) => {
-			if (match.bye)
+			if (match.state === MatchState.Bye)
 			{
 				acc += 1;
 			}
@@ -420,10 +450,10 @@ export class SwissTournamentController
 		roundIndexMax = (roundIndexMax >= 0 ? roundIndexMax : +Infinity);
 
 		return this.playerMatches(player, null, roundIndexMax).reduce((acc, match) => {
-			if (match.finished)
+			if (match.state === MatchState.Finished)
 			{
-				if ((match.playerName == player.name && match.playerScore < match.opponentScore)
-				|| (match.opponentName == player.name && match.playerScore > match.opponentScore))
+				if ((match.p1 == player.name && match.score1 < match.score2)
+				|| (match.p2 == player.name && match.score1 > match.score2))
 				{
 					acc += 1;
 				}
@@ -437,7 +467,7 @@ export class SwissTournamentController
 		roundIndexMax = (roundIndexMax >= 0 ? roundIndexMax : +Infinity);
 
 		return this.playerMatches(player, null, roundIndexMax).reduce((acc, match) => {
-			if (match.finished && (match.playerScore == match.opponentScore))
+			if (match.state === MatchState.Finished && match.score1 == match.score2)
 			{
 				acc += 1;
 			}
@@ -462,7 +492,7 @@ export class SwissTournamentController
 		var matchPoints = this.computePlayerMatchPoints(player, roundIndexMax);
 
 		var roundsPlayed = this.playerMatches(player, null, roundIndexMax).reduce((acc, match) => {
-			if (match.bye || match.finished)
+			if (match.state !== MatchState.Pending)
 			{
 				acc += 1;
 			}
@@ -496,9 +526,9 @@ export class SwissTournamentController
 		for (var i = 0; i < matches.length; i++)
 		{
 			var match = matches[i];
-			if (!match.bye && match.finished)
+			if (match.state === MatchState.Finished)
 			{
-				var opponentName = (match.playerName == player.name ? match.opponentName : match.playerName);
+				var opponentName = (match.p1 == player.name ? match.p2 : match.p1);
 				var opponent = this.getPlayerFromName(opponentName);
 				if (opponent)
 				{
@@ -528,12 +558,12 @@ export class SwissTournamentController
 		roundIndexMax = (roundIndexMax >= 0 ? roundIndexMax : +Infinity);
 
 		var res = this.playerMatches(player, null, roundIndexMax).reduce((acc, match) => {
-			if (match.finished)
+			if (match.state === MatchState.Finished)
 			{
-				var playerScore = (match.playerName == player.name ? match.playerScore : match.opponentScore);
+				var playerScore = (match.p1 == player.name ? match.score1 : match.score2);
 				acc += (3 * playerScore);
 			}
-			else if (match.bye)
+			else if (match.state === MatchState.Bye)
 			{
 				acc += (3 * 2);
 			}
@@ -550,11 +580,11 @@ export class SwissTournamentController
 		var gamePoints = this.computePlayerGamePoints(player, roundIndexMax);
 
 		var gamesPlayed = this.playerMatches(player, null, roundIndexMax).reduce((acc, match) => {
-			if (match.finished)
+			if (match.state === MatchState.Finished)
 			{
-				acc += (match.playerScore + match.opponentScore);
+				acc += (match.score1 + match.score2);
 			}
-			else if (match.bye)
+			else if (match.state === MatchState.Bye)
 			{
 				acc += 2;
 			}
@@ -593,9 +623,9 @@ export class SwissTournamentController
 		for (var i = 0; i < matches.length; i++)
 		{
 			var match = matches[i];
-			if (!match.bye && match.finished)
+			if (match.state === MatchState.Finished)
 			{
-				var opponentName = (match.playerName == player.name ? match.opponentName : match.playerName);
+				var opponentName = (match.p1 == player.name ? match.p2 : match.p1);
 				var opponent = this.getPlayerFromName(opponentName);
 				if (opponent)
 				{
@@ -629,7 +659,7 @@ export class SwissTournamentController
 			return false;
 		}
 
-		var oneMatchNotFinished = this.rounds[currentRound].some(match => (match.bye == false && match.finished == false));
+		var oneMatchNotFinished = this.rounds[currentRound].some(match => match.state === MatchState.Pending);
 		if (oneMatchNotFinished)
 		{
 			return false;
@@ -667,16 +697,22 @@ export class SwissTournamentController
 
 	computeMinimalPossibleScore(players)
 	{
-		let minScore = 0;
+		let minScore = {
+			"byMatch": [],
+			"total": 0
+		};
 		for (var p = 0; p < players.length; p += 2) // We ignore the last player if players.length is odd (bye)
 		{
 			var player = players[p];
 			var opponent = players[p + 1]
 
+			let score = 0;
 			if (player.matchPoints != opponent.matchPoints)
 			{
-				minScore += Math.max(player.matchPoints, opponent.matchPoints) + Math.abs(player.matchPoints - opponent.matchPoints);
+				score = Math.max(player.matchPoints, opponent.matchPoints) + Math.abs(player.matchPoints - opponent.matchPoints);
+				minScore.total += score;
 			}
+			minScore.byMatch.push(score);
 		}
 		return minScore;
 	}
@@ -686,6 +722,16 @@ export class SwissTournamentController
 		return new Promise((resolve, reject) =>
 		{
 			let computingWorker = new Worker("js/swissTournamentWorker.js");
+
+			persistantData.onlyPerfect = true;
+
+			let data = {
+				"CMD": "START",
+				"playersToPair": playersToPair,
+				"result": result,
+				"persistantData": persistantData,
+				"deep": deep
+			};
 
 			computingWorker.onmessage = (e) =>
 			{
@@ -698,7 +744,15 @@ export class SwissTournamentController
 
 					if (!res)
 					{
-						reject("Fail to create the matches");
+						if (data.onlyPerfect)
+						{
+							persistantData.onlyPerfect = false;
+							computingWorker.postMessage(data); // second pass (not only perfect matches)
+						}
+						else
+						{
+							resolve(null);
+						}
 					}
 
 					resolve({
@@ -712,13 +766,7 @@ export class SwissTournamentController
 				}
 			};
 
-			computingWorker.postMessage({
-				"CMD": "START",
-				"playersToPair": playersToPair,
-				"result": result,
-				"persistantData": persistantData,
-				"deep": deep
-			});
+			computingWorker.postMessage(data); // first pass (only perfect matches)
 		});
 	}
 	
@@ -787,8 +835,11 @@ export class SwissTournamentController
 			"minScore": +Infinity,
 			"passes": 0,
 			"skips": {},
-			"timeout": 10, // seconds
-			"minimalPossibleScore": 0
+			"timeout": 5, // seconds
+			"minimalPossibleScore": {
+				"byMatch": [],
+				"total": 0
+			}
 		};
 
 		let pairingPromise;
@@ -797,7 +848,7 @@ export class SwissTournamentController
 		{
 			let playersTiedToBye = playersToPair.filter(p => p.canBye === true).reverse();
 			let promises = [];
-			let maxThreads = navigator && (navigator.hardwareConcurrency ? navigator.hardwareConcurrency : 2);
+			let maxThreads = ((navigator && navigator.hardwareConcurrency) ? navigator.hardwareConcurrency - 1 : 1);
 
 			let launchNext = {
 				"f": null
@@ -806,15 +857,13 @@ export class SwissTournamentController
 			launchNext.f = () =>
 			{
 				let byePlayer = playersTiedToBye.shift();
-
+				playersTiedToBye.length = 0;
 				if (byePlayer)
 				{
 					let promise2Resolve;
-					// let promise2Reject;
 					let promise2 = new Promise((resolve, reject) =>
 					{
 						promise2Resolve = resolve;
-						// promise2Reject = reject;
 					});
 	
 					let newPlayersToPair = playersToPair.filter(p => p != byePlayer);
@@ -823,18 +872,13 @@ export class SwissTournamentController
 						"matches": []
 					};
 					persistantData.minimalPossibleScore = this.computeMinimalPossibleScore(newPlayersToPair);
-					this.tryToPairPlayers(newPlayersToPair, result2, persistantData, 0)
+					this.tryToPairPlayers(newPlayersToPair, result2, persistantData, -1)
 						.then((data) =>
 					{
-						launchNext.f();
 						data.byePlayer = byePlayer;
 						promise2Resolve(data);
-					})
-						.catch(error =>
-					{
 						launchNext.f();
-						promise2Resolve(null);
-					})
+					});
 	
 					promises.push(promise2);
 				}
@@ -873,7 +917,7 @@ export class SwissTournamentController
 		else
 		{
 			persistantData.minimalPossibleScore = this.computeMinimalPossibleScore(playersToPair);
-			pairingPromise = this.tryToPairPlayers(playersToPair, result, persistantData, 0);
+			pairingPromise = this.tryToPairPlayers(playersToPair, result, persistantData, -1);
 		}
 
 		pairingPromise
@@ -1099,7 +1143,7 @@ export class SwissTournamentController
 
 	serializeRounds()
 	{
-		return this.rounds.map(r => r.map(m => m.playerName + '/' + m.playerScore + (m.bye ? '': ('/' + m.opponentScore + '/' + m.opponentName + '/'))).join('{')).join('}');
+		return this.rounds.map(r => r.map(m => m.p1 + '/' + m.score1 + (m.state === MatchState.Bye ? '': ('/' + m.score2 + '/' + m.p2 + '/'))).join('{')).join('}');
 	}
 
 	deserializeRounds(matches)
@@ -1107,12 +1151,8 @@ export class SwissTournamentController
 		var rounds = matches.split('}').map(r => r.split('{').map(m2 =>
 		{
 			let m = m2.split('/');
-			return this.createMatch((m[3] ? false : true), m[0], m[3], parseInt(m[1]), parseInt(m[2]), true);
+			return this.createMatch((m[3] ? MatchState.Finished : MatchState.Bye), m[0], m[3], parseInt(m[1]), parseInt(m[2]));
 		}));
-		if (rounds.length > 0)
-		{
-			rounds.map(r => r.map(m => m.bye ? (m.finished = false) : null));
-		}
 		return rounds;
 	}
 
