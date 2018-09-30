@@ -63,15 +63,15 @@
 								<span ng-show="ctrl.playerDropped(player.name) && !ctrl.canUndrop(player.name)" title="dropped after round {{player.drop + 1}}">dropped</span>
 							</td>
 							<td class="tc" ng-if="ctrl.roundCount() == 0"><button type="button" class="btn btn-md btn-danger" ng-click="ctrl.removePlayer(player)">Delete</button></td>
-							<td class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.forDisplay(ctrl.computeMatchesWinPlusBye(player, ctrl.selectedRound))}} <small>{{ctrl.hasABye(player, ctrl.selectedRound) ? "B" : ""}}</small></span></td>
-							<td class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.forDisplay(ctrl.computeMatchesLoose(player, ctrl.selectedRound))}}</td>
-							<td class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.forDisplay(ctrl.computeMatchesDraw(player, ctrl.selectedRound))}}</td>
-							<th class="tc" ng-if="ctrl.roundCount() > 0"><span class="badge badge-dark">{{ctrl.computePlayerMatchPoints(player, ctrl.selectedRound)}}</span></th>
-							<td class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.forDisplay(ctrl.computePlayerMatchWinPercent(player, ctrl.selectedRound).toFixed(3))}}</td>
-							<th class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.forDisplay(ctrl.computeOpponentMatchWinPercent(player, ctrl.selectedRound).toFixed(3))}}</th>
-							<td class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.computePlayerGamePoints(player, ctrl.selectedRound)}}</td>
-							<th class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.forDisplay(ctrl.computePlayerGameWinPercent(player, ctrl.selectedRound).toFixed(3))}}</th>
-							<th class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.forDisplay(ctrl.computeOpponentGameWinPercent(player, ctrl.selectedRound).toFixed(3))}}</th>
+							<td class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.forDisplay(ctrl.computeMatchesWinPlusBye(ctrl.players.indexOf(player), ctrl.selectedRound))}} <small>{{ctrl.hasABye(ctrl.players.indexOf(player), ctrl.selectedRound) ? "B" : ""}}</small></span></td>
+							<td class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.forDisplay(ctrl.computeMatchesLoose(ctrl.players.indexOf(player), ctrl.selectedRound))}}</td>
+							<td class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.forDisplay(ctrl.computeMatchesDraw(ctrl.players.indexOf(player), ctrl.selectedRound))}}</td>
+							<th class="tc" ng-if="ctrl.roundCount() > 0"><span class="badge badge-dark">{{ctrl.computePlayerMatchPoints(ctrl.players.indexOf(player), ctrl.selectedRound)}}</span></th>
+							<td class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.forDisplay(ctrl.computePlayerMatchWinPercent(ctrl.players.indexOf(player), ctrl.selectedRound).toFixed(3))}}</td>
+							<th class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.forDisplay(ctrl.computeOpponentMatchWinPercent(ctrl.players.indexOf(player), ctrl.selectedRound).toFixed(3))}}</th>
+							<td class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.computePlayerGamePoints(ctrl.players.indexOf(player), ctrl.selectedRound)}}</td>
+							<th class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.forDisplay(ctrl.computePlayerGameWinPercent(ctrl.players.indexOf(player), ctrl.selectedRound).toFixed(3))}}</th>
+							<th class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.forDisplay(ctrl.computeOpponentGameWinPercent(ctrl.players.indexOf(player), ctrl.selectedRound).toFixed(3))}}</th>
 						</tr>
 					</tbody>
 				</table>
@@ -104,7 +104,7 @@
 					<tbody id="matches">
 						<tr ng-repeat="(matchIndex, match) in ctrl.rounds[ctrl.selectedRound]" ng-if="match.state !== ctrl.MatchState.Bye">
 							<th class="vam">{{matchIndex + 1}}</th>
-							<th class="vam">{{match.p1}}</th>
+							<th class="vam">{{ctrl.players[match.p1].name}}</th>
 							<td class="vam">
 								<div class="input-group input-group-lg">
 									<input type="number" class="form-control" ng-model="match.score1" ng-change="ctrl.updateScore(match)" ng-disabled="match.state === ctrl.MatchState.Finished">
@@ -114,7 +114,7 @@
 									<input type="number" class="form-control" ng-model="match.score2" ng-change="ctrl.updateScore(match)" ng-disabled="match.state === ctrl.MatchState.Finished">
 								</div>
 							</td>
-							<th class="vam">{{match.p2}}</th>
+							<th class="vam">{{ctrl.players[match.p2].name}}</th>
 							<td class="tc vam">
 								<div class="btn-group-toggle" ng-show="ctrl.isCurrentRound()">
 									<label class="btn btn-1" ng-class="{'active':match.state === ctrl.MatchState.Finished}">

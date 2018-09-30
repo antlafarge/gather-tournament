@@ -5,12 +5,12 @@ let MatchState =
     Bye: 2
 };
 
-function createMatch(matchState, playerName, opponentName, playerScore, opponentScore)
+function createMatch(matchState, playerId, opponentId, playerScore, opponentScore)
 {
     let match = newObject();
     match.state = (matchState || MatchState.Pending);
-    match.p1 = (playerName || "");
-    match.p2 = (opponentName || "");
+    match.p1 = (playerId >= 0 ? playerId : -1);
+    match.p2 = (opponentId >= 0 ? opponentId : -1);
     match.score1 = (playerScore || 0);
     match.score2 = (opponentScore || 0);
     return match;
@@ -249,7 +249,7 @@ function tryToPairPlayers(playersToPair, result, persistantData, deep)
             copyArray(result.matches, result2.matches);
 
             // Add match to matches
-            let match = createMatch(MatchState.Pending, p1.player.name, p2.player.name);
+            let match = createMatch(MatchState.Pending, p1.id, p2.id);
             match.score = score;
             result2.matches.push(match);
 
