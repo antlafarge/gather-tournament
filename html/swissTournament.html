@@ -102,30 +102,30 @@
 						</tr>
 					</thead>
 					<tbody id="matches">
-						<tr ng-repeat="(matchIndex, match) in ctrl.rounds[ctrl.selectedRound]" ng-if="!match.bye">
+						<tr ng-repeat="(matchIndex, match) in ctrl.rounds[ctrl.selectedRound]" ng-if="match.state !== ctrl.MatchState.Bye">
 							<th class="vam">{{matchIndex + 1}}</th>
-							<th class="vam">{{match.playerName}}</th>
+							<th class="vam">{{match.p1}}</th>
 							<td class="vam">
 								<div class="input-group input-group-lg">
-									<input type="number" class="form-control" ng-model="match.playerScore" ng-change="ctrl.updateScore(match)" ng-disabled="match.finished">
+									<input type="number" class="form-control" ng-model="match.score1" ng-change="ctrl.updateScore(match)" ng-disabled="match.state === ctrl.MatchState.Finished">
 									<div class="input-group-prepend input-group-append">
 										<span class="input-group-text">vs</span>
 									</div>
-									<input type="number" class="form-control" ng-model="match.opponentScore" ng-change="ctrl.updateScore(match)" ng-disabled="match.finished">
+									<input type="number" class="form-control" ng-model="match.score2" ng-change="ctrl.updateScore(match)" ng-disabled="match.state === ctrl.MatchState.Finished">
 								</div>
 							</td>
-							<th class="vam">{{match.opponentName}}</th>
+							<th class="vam">{{match.p2}}</th>
 							<td class="tc vam">
 								<div class="btn-group-toggle" ng-show="ctrl.isCurrentRound()">
-									<label class="btn btn-1" ng-class="{'active':match.finished}">
-										<input type="checkbox" autocomplete="off" ng-model="match.finished" ng-change="ctrl.updateScore(match)"> {{match.finished ? "Yes" : "No"}}
+									<label class="btn btn-1" ng-class="{'active':match.state === ctrl.MatchState.Finished}">
+										<input type="checkbox" autocomplete="off" ng-model="match.state" ng-change="ctrl.updateScore(match)" ng-true-value="1" ng-false-value="0"> {{match.state === ctrl.MatchState.Finished ? "Yes" : "No"}}
 									</label>
 								</div>
 							</td>
 						</tr>
-						<tr ng-repeat="match in ctrl.rounds[ctrl.selectedRound]" ng-if="match.bye">
+						<tr ng-repeat="match in ctrl.rounds[ctrl.selectedRound]" ng-if="match.state === ctrl.MatchState.Bye">
 							<th class="vam">Bye</th>
-							<th class="vam" colspan="4">{{match.playerName}}</th>
+							<th class="vam" colspan="4">{{match.p1}}</th>
 						</tr>
 					</tbody>
 				</table>

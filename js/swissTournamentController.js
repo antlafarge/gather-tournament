@@ -15,6 +15,8 @@ export class SwissTournamentController
 		this.scope = $scope;
 		this.route = $route;
 		this.q = $q;
+		
+		this.MatchState = MatchState;
 
 		this.players = [];
 		this.rounds = [];
@@ -909,7 +911,7 @@ export class SwissTournamentController
 						}
 					}
 				});
-				let byeMatch = this.createMatch(true, bestData.byePlayer.player.name);
+				let byeMatch = this.createMatch(MatchState.Bye, bestData.byePlayer.player.name);
 				bestData.result.matches.push(byeMatch);
 				return bestData;
 			});

@@ -249,7 +249,7 @@ function tryToPairPlayers(playersToPair, result, persistantData, deep)
             copyArray(result.matches, result2.matches);
 
             // Add match to matches
-            let match = createMatch(false, p1.player.name, p2.player.name);
+            let match = createMatch(MatchState.Pending, p1.player.name, p2.player.name);
             match.score = score;
             result2.matches.push(match);
 
