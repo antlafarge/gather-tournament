@@ -1,10 +1,9 @@
 <header>
 	<table class="table table-lg">
 		<tr>
+			<!-- Menus -->
 			<td class="tl">
-				<a class="dropdown-toggle" href="" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-					Actions
-				</a>
+				<a class="dropdown-toggle" href="" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</a>
 				<div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
 					<a class="dropdown-item" href="" ng-click="ctrl.reset()">New tournament</a>
 					<div class="dropdown-divider"></div>
@@ -19,6 +18,7 @@
 					<a class="dropdown-item" id="fillRandomScores" href="" ng-click="ctrl.fillRandomScores()">Fill random scores</a>
 				</div>
 			</td>
+			<!-- Rounds -->
 			<td class="tl" ng-show="ctrl.roundMaxCount() > 0">
 				<form class="form-inline btn-group">
 					<button type="button" class="btn btn-lg btn-outline-secondary" disabled>Round</button>
@@ -32,12 +32,31 @@
 	<div class="container-fluid">
 		<div class="row">
 			<div class="col">
-				<table class="table table-lg table-bordered table-striped table-hover">
+				<!-- Players list -->
+				<table class="table table-lg table-bordered table-striped table-hover" ng-if="ctrl.roundCount() === 0">
 					<thead class="thead-dark">
 						<tr>
 							<th class="tc">#</th>
-							<th class="tc" colspan="2">{{ctrl.sortedPlayers.length}} players</th>
-							<th class="tc" ng-if="ctrl.roundCount() == 0">Delete</th>
+							<th class="tc">{{ctrl.players.length}} players</th>
+							<th class="tc">Delete</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr ng-repeat="(playerIndex, player) in ctrl.sortedPlayers" ng-class="{'bg-info':(ctrl.selectedPlayer == player), 'bg-success':(ctrl.playerMatchesWinDiff(ctrl.selectedPlayer, player, ctrl.selectedRound) > 0), 'bg-danger':(ctrl.playerMatchesWinDiff(ctrl.selectedPlayer, player, ctrl.selectedRound) < 0), 'bg-warning':(ctrl.playerMatchesWinDiff(ctrl.selectedPlayer, player, ctrl.selectedRound) === 0)}">
+							<th class="tc">{{playerIndex + 1}}</th>
+							<th class="tl">{{player.name}}</th>
+							<td class="tc" ng-if="ctrl.roundCount() == 0">
+								<button type="button" class="btn btn-md btn-danger" ng-click="ctrl.removePlayer(score.player)">Delete</button>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+				<!-- Players scores -->
+				<table class="table table-lg table-bordered table-striped table-hover" ng-if="ctrl.roundCount() > 0">
+					<thead class="thead-dark">
+						<tr>
+							<th class="tc">#</th>
+							<th class="tc" colspan="2">{{ctrl.allScores[ctrl.selectedRound].length}} players</th>
 							<th class="tc" title="Win (Bye)" ng-if="ctrl.roundCount() > 0">W</th>
 							<th class="tc" title="Loose" ng-if="ctrl.roundCount() > 0">L</th>
 							<th class="tc" title="Draw" ng-if="ctrl.roundCount() > 0">D</th>
@@ -50,34 +69,38 @@
 						</tr>
 					</thead>
 					<tbody>
-						<tr class="pointer" ng-repeat="(playerIndex, player) in ctrl.sortedPlayers" ng-click="ctrl.toggleSelectPlayer(player)" ng-class="{'bg-info':(ctrl.selectedPlayer == player), 'bg-success':(ctrl.playerMatchesWinDiff(ctrl.selectedPlayer, player, ctrl.selectedRound) > 0), 'bg-danger':(ctrl.playerMatchesWinDiff(ctrl.selectedPlayer, player, ctrl.selectedRound) < 0), 'bg-warning':(ctrl.playerMatchesWinDiff(ctrl.selectedPlayer, player, ctrl.selectedRound) === 0)}">
+						<tr class="pointer" ng-repeat="(playerIndex, score) in ctrl.allScores[ctrl.selectedRound]" ng-click="ctrl.toggleSelectPlayer(score.player)" ng-class="{'bg-info':(ctrl.selectedPlayer == score.player), 'bg-success':(ctrl.playerMatchesWinDiff(ctrl.selectedPlayer, score.player, ctrl.selectedRound) > 0), 'bg-danger':(ctrl.playerMatchesWinDiff(ctrl.selectedPlayer, score.player, ctrl.selectedRound) < 0), 'bg-warning':(ctrl.playerMatchesWinDiff(ctrl.selectedPlayer, score.player, ctrl.selectedRound) === 0)}">
 							<th class="tc">{{playerIndex + 1}}</th>
 							<th class="tl">
-								<span ng-show="ctrl.isLastRound() && ctrl.currentRoundScoresEntered() && playerIndex === 0">&#x1F947</span>
-								<span ng-show="ctrl.isLastRound() && ctrl.currentRoundScoresEntered() && playerIndex === 1">&#x1F948</span>
-								<span ng-show="ctrl.isLastRound() && ctrl.currentRoundScoresEntered() && playerIndex === 2">&#x1F949</span>
-								{{player.name}}</th>
+								<span ng-if="ctrl.isLastRound() && ctrl.currentRoundScoresEntered()">
+									<span ng-show="playerIndex === 0">&#x1F947</span>
+									<span ng-show="playerIndex === 1">&#x1F948</span>
+									<span ng-show="playerIndex === 2">&#x1F949</span>
+								</span>
+								{{score.player.name}}
+							</th>
 							<td>
-								<button class="btn btn-secondary" ng-show="ctrl.canDrop(player.name)" ng-click="ctrl.toggleDropPlayer(player.name); $event.stopPropagation();">Drop</button>
-								<button class="btn btn-danger" ng-show="ctrl.canUndrop(player.name)" ng-click="ctrl.toggleDropPlayer(player.name); $event.stopPropagation();">Undrop</button>
-								<span ng-show="ctrl.playerDropped(player.name) && !ctrl.canUndrop(player.name)" title="dropped after round {{player.drop + 1}}">dropped</span>
+								<button class="btn btn-secondary" ng-show="ctrl.canDrop(score.playerId)" ng-click="ctrl.toggleDropPlayer(score.playerId); $event.stopPropagation();">Drop</button>
+								<button class="btn btn-danger" ng-show="ctrl.canUndrop(score.playerId)" ng-click="ctrl.toggleDropPlayer(score.playerId); $event.stopPropagation();">Undrop</button>
+								<span ng-show="ctrl.playerDropped(score.playerId) && !ctrl.canUndrop(score.playerId)" title="dropped after round {{score.player.drop + 1}}">dropped</span>
 							</td>
-							<td class="tc" ng-if="ctrl.roundCount() == 0"><button type="button" class="btn btn-md btn-danger" ng-click="ctrl.removePlayer(player)">Delete</button></td>
-							<td class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.forDisplay(ctrl.computeMatchesWinPlusBye(ctrl.players.indexOf(player), ctrl.selectedRound))}} <small>{{ctrl.hasABye(ctrl.players.indexOf(player), ctrl.selectedRound) ? "B" : ""}}</small></span></td>
-							<td class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.forDisplay(ctrl.computeMatchesLoose(ctrl.players.indexOf(player), ctrl.selectedRound))}}</td>
-							<td class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.forDisplay(ctrl.computeMatchesDraw(ctrl.players.indexOf(player), ctrl.selectedRound))}}</td>
-							<th class="tc" ng-if="ctrl.roundCount() > 0"><span class="badge badge-dark">{{ctrl.computePlayerMatchPoints(ctrl.players.indexOf(player), ctrl.selectedRound)}}</span></th>
-							<td class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.forDisplay(ctrl.computePlayerMatchWinPercent(ctrl.players.indexOf(player), ctrl.selectedRound).toFixed(3))}}</td>
-							<th class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.forDisplay(ctrl.computeOpponentMatchWinPercent(ctrl.players.indexOf(player), ctrl.selectedRound).toFixed(3))}}</th>
-							<td class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.computePlayerGamePoints(ctrl.players.indexOf(player), ctrl.selectedRound)}}</td>
-							<th class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.forDisplay(ctrl.computePlayerGameWinPercent(ctrl.players.indexOf(player), ctrl.selectedRound).toFixed(3))}}</th>
-							<th class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.forDisplay(ctrl.computeOpponentGameWinPercent(ctrl.players.indexOf(player), ctrl.selectedRound).toFixed(3))}}</th>
+							<td class="tc" ng-if="ctrl.roundCount() == 0"><button type="button" class="btn btn-md btn-danger" ng-click="ctrl.removePlayer(score.player)">Delete</button></td>
+							<td class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.forDisplay(score.matchesWin)}} <small>{{score.byes > 0 ? "B" : ""}}</small></span></td>
+							<td class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.forDisplay(score.matchesLoose)}}</td>
+							<td class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.forDisplay(score.matchesDraw)}}</td>
+							<th class="tc" ng-if="ctrl.roundCount() > 0"><span class="badge badge-dark">{{score.matchPoints}}</span></th>
+							<td class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.forDisplay(score.matchWinPercent).toFixed(3)}}</td>
+							<th class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.forDisplay(score.opponentMatchWinPercent).toFixed(3)}}</th>
+							<td class="tc" ng-if="ctrl.roundCount() > 0">{{score.gamePoints}}</td>
+							<th class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.forDisplay(score.gameWinPercent).toFixed(3)}}</th>
+							<th class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.forDisplay(score.opponentGameWinPercent).toFixed(3)}}</th>
 						</tr>
 					</tbody>
 				</table>
 			</div>
 		</div>
 		<div class="row" ng-show="ctrl.roundCount() == 0">
+			<!-- Add new player -->
 			<div class="col tc">
 				<p>
 					<div class="input-group input-group-lg">
@@ -91,6 +114,7 @@
 		</div>
 		<div class="row" ng-show="ctrl.roundCount() > 0">
 			<div class="col">
+				<!-- Add new player -->
 				<table class="table table-sm table-bordered table-striped">
 					<thead class="thead-dark">
 						<tr>
