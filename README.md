@@ -1,3 +1,3 @@
 # Gather tournament
 
-https://antlafarge.github.io/gather-tournament
+Online demo : https://antlafarge.github.io/gather-tournament
