@@ -812,13 +812,20 @@ export class SwissTournamentController
 				{
 					let res = e.data.res;
 					let result = e.data.result;
-					let persistantData = e.data.persistantData;
+					let persistantData2 = e.data.persistantData;
 
-					if (!res)
+					if (res)
 					{
-						if (data.onlyPerfect)
+						resolve({
+							result: result,
+							persistantData: persistantData2
+						});
+					}
+					else
+					{
+						if (data.persistantData.onlyPerfect)
 						{
-							persistantData.onlyPerfect = false;
+							data.persistantData.onlyPerfect = false;
 							computingWorker.postMessage(data); // second pass (not only perfect matches)
 						}
 						else
@@ -826,11 +833,6 @@ export class SwissTournamentController
 							resolve(null);
 						}
 					}
-
-					resolve({
-						result,
-						persistantData
-					});
 				}
 				else
 				{

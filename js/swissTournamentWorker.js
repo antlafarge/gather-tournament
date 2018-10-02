@@ -138,6 +138,7 @@ function tryToPairPlayers(playersToPair, result, persistantData, deep)
     {
         persistantData.objectsCount = objectsCount;
         persistantData.arraysCount = arraysCount;
+        persistantData.computingTime = perf;
         port.postMessage(persistantData);
         lastPerf = perf;
     }
