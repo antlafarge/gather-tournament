@@ -869,12 +869,13 @@ export class SwissTournamentController
 		}
 
 		playersToPair = playersToPair.map(player => {
+			let playerId = this.players.indexOf(player);
 			return {
 				"player": player,
-				"id": this.players.indexOf(player),
-				"matchPoints": this.computePlayerMatchPoints(player),
-				"byeCount": this.computeByeCount(player),
-				"potentialOpponents": playersToPair.filter(opponent => (player !== opponent && !this.matchAlreadyPlayed(player, opponent))),
+				"id": playerId,
+				"matchPoints": this.computePlayerMatchPoints(playerId),
+				"byeCount": this.computeByeCount(playerId),
+				"potentialOpponents": playersToPair.filter(opponent => (player !== opponent && !this.matchAlreadyPlayed(playerId, this.players.indexOf(opponent)))),
 				"canBye": true
 			};
 		});
