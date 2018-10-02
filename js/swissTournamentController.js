@@ -549,9 +549,8 @@ export class SwissTournamentController
 		roundIndexMax = (roundIndexMax >= 0 ? roundIndexMax : +Infinity);
 
 		var winCount = this.computeMatchesWin(playerId, roundIndexMax);
-		var byeCount = this.computeByeCount(playerId, roundIndexMax);
 		var drawCount = this.computeMatchesDraw(playerId, roundIndexMax);
-		return (3 * (winCount + byeCount) + drawCount);
+		return (3 * winCount + drawCount);
 	}
 
 	computePlayerMatchWinPercent(playerId, roundIndexMax)

@@ -149,7 +149,7 @@
 						</tr>
 						<tr ng-repeat="match in ctrl.rounds[ctrl.selectedRound]" ng-if="match.state === ctrl.MatchState.Bye">
 							<th class="vam">Bye</th>
-							<th class="vam" colspan="4">{{match.p1}}</th>
+							<th class="vam" colspan="4">{{ctrl.players[match.p1].name}}</th>
 						</tr>
 					</tbody>
 				</table>
