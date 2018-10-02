@@ -69,7 +69,7 @@
 						</tr>
 					</thead>
 					<tbody>
-						<tr class="pointer" ng-repeat="(playerIndex, score) in ctrl.allScores[ctrl.selectedRound]" ng-click="ctrl.toggleSelectPlayer(score.player)" ng-class="{'bg-info':(ctrl.selectedPlayer == score.player), 'bg-success':(ctrl.playerMatchesWinDiff(ctrl.selectedPlayer, score.player, ctrl.selectedRound) > 0), 'bg-danger':(ctrl.playerMatchesWinDiff(ctrl.selectedPlayer, score.player, ctrl.selectedRound) < 0), 'bg-warning':(ctrl.playerMatchesWinDiff(ctrl.selectedPlayer, score.player, ctrl.selectedRound) === 0)}">
+						<tr class="pointer" ng-repeat="(playerIndex, score) in ctrl.allScores[ctrl.selectedRound]" ng-click="ctrl.toggleSelectPlayer(score.playerId)" ng-class="{'bg-info':(ctrl.selectedPlayerId == score.player), 'bg-success':(ctrl.playerMatchesWinDiff(ctrl.selectedPlayerId, score.playerId, ctrl.selectedRound) > 0), 'bg-danger':(ctrl.playerMatchesWinDiff(ctrl.selectedPlayerId, score.playerId, ctrl.selectedRound) < 0), 'bg-warning':(ctrl.playerMatchesWinDiff(ctrl.selectedPlayerId, score.playerId, ctrl.selectedRound) === 0)}">
 							<th class="tc">{{playerIndex + 1}}</th>
 							<th class="tl">
 								<span ng-if="ctrl.isLastRound() && ctrl.currentRoundScoresEntered()">

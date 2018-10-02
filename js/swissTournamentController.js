@@ -26,6 +26,7 @@ export class SwissTournamentController
 		this.allScores = [];
 		this.playerNameToAdd = "";
 		this.selectedPlayer = null;
+		this.selectedPlayerId = null;
 
 		this.load();
 
@@ -192,6 +193,7 @@ export class SwissTournamentController
 		if (this.roundCount() <= 0)
 		{
 			this.selectedPlayer = null;
+			this.selectedPlayerId = null;
 			return;
 		}
 
@@ -200,10 +202,12 @@ export class SwissTournamentController
 			if (player != this.selectedPlayer)
 			{
 				this.selectedPlayer = player;
+				this.selectedPlayerId = this.players.indexOf(player);
 			}
 			else
 			{
 				this.selectedPlayer = null;
+				this.selectedPlayerId = null;
 			}
 		}
 	}
@@ -424,7 +428,7 @@ export class SwissTournamentController
 
 	playerMatchesWinDiff(playerId1, playerId2, roundIndexMax)
 	{
-		if (playerId1 === -1 || playerId2 === -1)
+		if (playerId1 == null || playerId2 == null || playerId1 === -1 || playerId2 === -1)
 		{
 			return false;
 		}
@@ -910,7 +914,7 @@ export class SwissTournamentController
 		let persistantData = {
 			"minScore": +Infinity,
 			"passes": 0,
-			"skips": {},
+			"skips": [],
 			"timeout": 5, // seconds
 			"minimalPossibleScore": {
 				"byMatch": [],
@@ -1106,6 +1110,7 @@ export class SwissTournamentController
 		this.rounds = [];
 		this.selectedRound = 0;
 		this.selectedPlayer = null;
+		this.selectedPlayerId = null;
 
 		this.refreshScores(true);
 
