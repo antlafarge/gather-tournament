@@ -911,7 +911,7 @@ export class SwissTournamentController
 			"minScore": +Infinity,
 			"passes": 0,
 			"skips": [],
-			"timeout": Math.floor(this.players.length / 100), // seconds
+			"timeout": (this.players.length / 10), // seconds
 			"minimalPossibleScore": {
 				"byMatch": [],
 				"total": 0
