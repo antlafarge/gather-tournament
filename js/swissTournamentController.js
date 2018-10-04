@@ -60,7 +60,7 @@ export class SwissTournamentController
 
 	canDrop(playerId)
 	{
-		var player = this.players[playerId];
+		let player = this.players[playerId];
 
 		if (player == null)
 		{
@@ -72,7 +72,7 @@ export class SwissTournamentController
 			return false;
 		}
 
-		var lastMatch = this.playerMatches(playerId).pop();
+		let lastMatch = this.playerMatches(playerId).pop();
 
 		if (lastMatch && lastMatch.state !== MatchState.Pending)
 		{
@@ -86,7 +86,7 @@ export class SwissTournamentController
 	
 	canUndrop(playerId)
 	{
-		var player = this.players[playerId];
+		let player = this.players[playerId];
 
 		if (player == null)
 		{
@@ -98,7 +98,7 @@ export class SwissTournamentController
 			return false;
 		}
 
-		var lastMatch = this.playerMatches(playerId).pop();
+		let lastMatch = this.playerMatches(playerId).pop();
 
 		if (lastMatch && lastMatch.state !== MatchState.Pending)
 		{
@@ -112,7 +112,7 @@ export class SwissTournamentController
 	
 	playerDropped(playerId)
 	{
-		var player = this.players[playerId];
+		let player = this.players[playerId];
 
 		if (player == null)
 		{
@@ -130,7 +130,7 @@ export class SwissTournamentController
 	add100RandomPlayers()
 	{
 		console.log("add100RandomPlayers...");
-		for (var i = 0; i < 100; i++)
+		for (let i = 0; i < 100; i++)
 		{
 			let playerName = "player_" + this.randChar() + this.randChar() + this.randChar() + this.randChar() + this.randChar() + this.randChar();
 			this.addPlayer(playerName);
@@ -144,19 +144,23 @@ export class SwissTournamentController
 		let round = this.rounds.length - 1;
 		if (round >= 0)
 		{
+			let changed = false;
 			this.rounds[round].forEach(match =>
 			{
 				if (match.state === MatchState.Pending)
 				{
-					match.state = MatchState.Finished;
 					match.score1 = Math.floor((Math.random() * 3));
 					match.score2 = Math.floor((Math.random() * 3));
+					match.state = MatchState.Finished;
+					changed = true;
 				}
 			});
 
-			this.refreshScores();
-
-			this.save();
+			if (changed)
+			{
+				this.refreshScores();
+				this.save();
+			}
 
 			console.log("fillRandomScores OK");
 		}
@@ -164,14 +168,14 @@ export class SwissTournamentController
 
 	toggleDropPlayer(playerId)
 	{
-		var player = this.players[playerId];
+		let player = this.players[playerId];
 
 		if (player == null)
 		{
 			throw "Can't find player";
 		}
 
-		var round = this.currentRound();
+		let round = this.currentRound();
 
 		if (player.drop !== round)
 		{
@@ -235,7 +239,7 @@ export class SwissTournamentController
 			return false;
 		}
 
-		var playersToPair = this.players.filter(player => (player.drop === false));
+		let playersToPair = this.players.filter(player => player.drop === false);
 		if (playersToPair.length >= 2)
 		{
 			return false;
@@ -281,8 +285,8 @@ export class SwissTournamentController
 
 	lowerPowerOfTwo(x)
 	{
-		var i = 0;
-		var res = 1;
+		let i = 0;
+		let res = 1;
 		while (res < x)
 		{
 			i++;
@@ -291,7 +295,7 @@ export class SwissTournamentController
 		return i;
 	}
 
-	refreshScores(refreshAll)
+	refreshScores(refreshAll, players)
 	{
 		// Sort player list
 		if (refreshAll || this.sortedPlayers.length === 0 || this.roundCount() === 0)
@@ -344,19 +348,20 @@ export class SwissTournamentController
 				score.playerId = playerId;
 				score.player = this.players[playerId];
 
-				score.matchesWin = this.computeMatchesWin(playerId, round);
-				score.matchesDraw = this.computeMatchesDraw(playerId, round);
-				score.matchesLoose = this.computeMatchesLoose(playerId, round);
-				score.byes = this.computeByeCount(playerId, round);
+				let matches = this.playerMatches(playerId, -1, round);
 
-				score.matchPoints = this.computePlayerMatchPoints(playerId, round);
-				score.gamePoints = this.computePlayerGamePoints(playerId, round);
+				score.matchesWin = this.computeMatchesWin(playerId, matches);
+				score.matchesDraw = this.computeMatchesDraw(matches);
+				score.matchesLoose = this.computeMatchesLoose(playerId, matches);
+				score.byes = this.computeByeCount(matches);
+
+				score.matchPoints = this.computePlayerMatchPoints(playerId, matches);//3 * score.matchesWin + score.matchesDraw;
+				score.matchWinPercent = this.computePlayerMatchWinPercent(playerId, matches);
+				score.opponentMatchWinPercent = this.computeOpponentMatchWinPercent(playerId, matches);
 				
-				score.matchWinPercent = this.computePlayerGameWinPercent(playerId, round);
-				score.opponentMatchWinPercent = this.computeOpponentMatchWinPercent(playerId, round);
-
-				score.gameWinPercent = this.computePlayerGameWinPercent(playerId, round);
-				score.opponentGameWinPercent = this.computeOpponentGameWinPercent(playerId, round);
+				score.gamePoints = this.computePlayerGamePoints(playerId, matches);
+				score.gameWinPercent = this.computePlayerGameWinPercent(playerId, matches);
+				score.opponentGameWinPercent = this.computeOpponentGameWinPercent(playerId, matches);
 			}
 		}
 
@@ -411,7 +416,7 @@ export class SwissTournamentController
 
 		roundIndexMax = (roundIndexMax >= 0 ? roundIndexMax : +Infinity);
 
-		var filteredRounds = this.rounds.map((round, index) =>
+		let filteredRounds = this.rounds.map((round, index) =>
 		{
 			if (index <= roundIndexMax)
 			{
@@ -429,7 +434,7 @@ export class SwissTournamentController
 			return false;
 		}
 
-		var playerMatches = this.playerMatches(playerId1, playerId2, roundIndexMax);
+		let playerMatches = this.playerMatches(playerId1, playerId2, roundIndexMax);
 		if (playerMatches.length == 0)
 		{
 			return false;
@@ -440,7 +445,7 @@ export class SwissTournamentController
 			return false;
 		}
 
-		var winDiff = playerMatches.reduce((acc, match) =>
+		let winDiff = playerMatches.reduce((acc, match) =>
 		{
 			if ((match.p1 == playerId1 && match.score1 > match.score2) || (match.p2 == playerId1 && match.score2 > match.score1))
 			{
@@ -469,114 +474,103 @@ export class SwissTournamentController
 
 	getPlayerFromName(playerName)
 	{
-		return this.players.find(player => (player.name == playerName));
+		return this.players.find(player => (player.name === playerName));
 	}
 
-	computeMatchesWin(playerId, roundIndexMax)
+	computeMatchesWin(playerId, matches)
 	{
-		roundIndexMax = (roundIndexMax >= 0 ? roundIndexMax : +Infinity);
-
-		return this.playerMatches(playerId, -1, roundIndexMax)
-			.reduce((acc, match) =>
+		let matchesWin = 0;
+		for (let i = 0; i < matches.length; i++)
 		{
+			let match = matches[i];
 			if (match.state === MatchState.Finished && ((match.p1 === playerId && match.score1 > match.score2) || (match.p2 === playerId && match.score1 < match.score2))
 			|| match.state === MatchState.Bye && match.p1 === playerId)
 			{
-				acc += 1;
+				matchesWin++;
 			}
-			return acc;
-		}, 0);
+		}
+		return matchesWin;
 	}
 
-	hasABye(playerId, roundIndexMax)
+	hasABye(matches)
 	{
-		roundIndexMax = (roundIndexMax >= 0 ? roundIndexMax : +Infinity);
-
-		return this.playerMatches(playerId, -1, roundIndexMax).some(match => match.state === MatchState.Bye);
+		return matches.some(match => match.state === MatchState.Bye);
 	}
 
-	computeByeCount(playerId, roundIndexMax)
+	computeByeCount(matches)
 	{
-		roundIndexMax = (roundIndexMax >= 0 ? roundIndexMax : +Infinity);
-
-		return this.playerMatches(playerId, -1, roundIndexMax)
-			.reduce((acc, match) =>
+		let byes = 0;
+		for (let i = 0; i < matches.length; i++)
 		{
+			let match = matches[i];
 			if (match.state === MatchState.Bye)
 			{
-				acc += 1;
+				byes++;
 			}
-			return acc;
-		}, 0);
+		}
+		return byes;
 	}
 
-	computeMatchesLoose(playerId, roundIndexMax)
+	computeMatchesLoose(playerId, matches)
 	{
-		roundIndexMax = (roundIndexMax >= 0 ? roundIndexMax : +Infinity);
-
-		return this.playerMatches(playerId, -1, roundIndexMax)
-			.reduce((acc, match) =>
+		let matchesLoose = 0;
+		for (let i = 0; i < matches.length; i++)
 		{
+			let match = matches[i];
 			if (match.state === MatchState.Finished)
 			{
-				if ((match.p1 == playerId && match.score1 < match.score2)
-				|| (match.p2 == playerId && match.score1 > match.score2))
+				if ((match.p1 === playerId && match.score1 < match.score2)
+				|| (match.p2 === playerId && match.score1 > match.score2))
 				{
-					acc += 1;
+					matchesLoose++;
 				}
 			}
-			return acc;
-		}, 0);
+		}
+		return matchesLoose;
 	}
 
-	computeMatchesDraw(playerId, roundIndexMax)
+	computeMatchesDraw(matches)
 	{
-		roundIndexMax = (roundIndexMax >= 0 ? roundIndexMax : +Infinity);
-
-		return this.playerMatches(playerId, -1, roundIndexMax)
-			.reduce((acc, match) =>
+		let matchesDraw = 0;
+		for (let i = 0; i < matches.length; i++)
 		{
-			if (match.state === MatchState.Finished && match.score1 == match.score2)
+			let match = matches[i];
+			if (match.state === MatchState.Finished && match.score1 === match.score2)
 			{
-				acc += 1;
-			}
-			return acc;
-		}, 0);
+				matchesDraw++;
+			}	
+		}
+		return matchesDraw;
 	}
 
-	computePlayerMatchPoints(playerId, roundIndexMax)
+	computePlayerMatchPoints(playerId, matches)
 	{
-		roundIndexMax = (roundIndexMax >= 0 ? roundIndexMax : +Infinity);
-
-		var winCount = this.computeMatchesWin(playerId, roundIndexMax);
-		var drawCount = this.computeMatchesDraw(playerId, roundIndexMax);
+		let winCount = this.computeMatchesWin(playerId, matches);
+		let drawCount = this.computeMatchesDraw(matches);
 		return (3 * winCount + drawCount);
 	}
 
-	computePlayerMatchWinPercent(playerId, roundIndexMax)
+	computePlayerMatchWinPercent(playerId, matches)
 	{
-		roundIndexMax = (roundIndexMax >= 0 ? roundIndexMax : +Infinity);
-
-		var matchPoints = this.computePlayerMatchPoints(playerId, roundIndexMax);
-
-		var roundsPlayed = this.playerMatches(playerId, -1, roundIndexMax)
-			.reduce((acc, match) =>
+		let roundsPlayed = 0;
+		for (let i = 0; i < matches.length; i++)
 		{
+			let match = matches[i];
 			if (match.state !== MatchState.Pending)
 			{
-				acc += 1;
+				roundsPlayed++;
 			}
-			return acc;
-		}, 0);
-
-		var res = 0;
-
+		}
+		
+		let res = 0;
+		
 		if (roundsPlayed > 0)
 		{
-			res = (matchPoints / (3 * roundsPlayed));
+			let matchPoints = this.computePlayerMatchPoints(playerId, matches);
+			res = matchPoints / (3 * roundsPlayed);
 		}
 
-		if (res < 1 / 3)
+		if (res < (1 / 3))
 		{
 			res = (1 / 3);
 		}
@@ -584,37 +578,29 @@ export class SwissTournamentController
 		return res;
 	}
 
-	computeOpponentMatchWinPercent(playerId, roundIndexMax)
+	computeOpponentMatchWinPercent(playerId, matches)
 	{
-		roundIndexMax = (roundIndexMax >= 0 ? roundIndexMax : +Infinity);
-
-		var matches = this.playerMatches(playerId, -1, roundIndexMax);
-
-		var acc = 0;
-		var opponentCount = 0;
-
-		for (var i = 0; i < matches.length; i++)
+		let acc = 0;
+		let opponentCount = 0;
+		for (let i = 0; i < matches.length; i++)
 		{
-			var match = matches[i];
+			let match = matches[i];
 			if (match.state === MatchState.Finished)
 			{
-				var opponentId = (match.p1 === playerId ? match.p2 : match.p1);
-				if (opponentId !== -1)
-				{
-					acc += this.computePlayerMatchWinPercent(opponentId, roundIndexMax);
-					opponentCount++;
-				}
+				let opponentId = (match.p1 === playerId ? match.p2 : match.p1);
+				acc += this.computePlayerMatchWinPercent(opponentId, matches);
+				opponentCount++;
 			}
 		}
 
-		var res = 0;
+		let res = 0;
 
 		if (opponentCount > 0)
 		{
 			res = acc / opponentCount;
 		}
 
-		if (res < 1 / 3)
+		if (res < (1 / 3))
 		{
 			res = (1 / 3);
 		}
@@ -622,56 +608,50 @@ export class SwissTournamentController
 		return res;
 	}
 
-	computePlayerGamePoints(playerId, roundIndexMax)
+	computePlayerGamePoints(playerId, matches)
 	{
-		roundIndexMax = (roundIndexMax >= 0 ? roundIndexMax : +Infinity);
-
-		var res = this.playerMatches(playerId, -1, roundIndexMax)
-			.reduce((acc, match) =>
+		let gamePoints = 0;
+		for (let i = 0; i < matches.length; i++)
 		{
+			let match = matches[i];
 			if (match.state === MatchState.Finished)
 			{
-				var playerScore = (match.p1 === playerId ? match.score1 : match.score2);
-				acc += (3 * playerScore);
+				let playerScore = (match.p1 === playerId ? match.score1 : match.score2);
+				gamePoints += (3 * playerScore);
 			}
 			else if (match.state === MatchState.Bye)
 			{
-				acc += (3 * 2);
+				gamePoints += (3 * 2); // TODO (this is hardcoded)
 			}
-			return acc;
-		}, 0);
-
-		return res;
+		}
+		return gamePoints;
 	}
 
-	computePlayerGameWinPercent(playerId, roundIndexMax)
+	computePlayerGameWinPercent(playerId, matches)
 	{
-		roundIndexMax = (roundIndexMax >= 0 ? roundIndexMax : +Infinity);
-
-		var gamePoints = this.computePlayerGamePoints(playerId, roundIndexMax);
-
-		var gamesPlayed = this.playerMatches(playerId, -1, roundIndexMax)
-			.reduce((acc, match) =>
+		let gamesPlayed = 0;
+		for (let i = 0; i < matches.length; i++)
 		{
+			let match = matches[i];
 			if (match.state === MatchState.Finished)
 			{
-				acc += (match.score1 + match.score2);
+				gamesPlayed += (match.score1 + match.score2);
 			}
 			else if (match.state === MatchState.Bye)
 			{
-				acc += 2;
+				gamesPlayed += 2;
 			}
-			return acc;
-		}, 0);
+		}
 
-		var res = 0;
+		let res = 0;
 
 		if (gamesPlayed > 0)
 		{
-			res = (gamePoints / (3 * gamesPlayed));
+			let gamePoints = this.computePlayerGamePoints(playerId, matches);
+			res = gamePoints / (3 * gamesPlayed);
 		}
 
-		if (res < 1 / 3)
+		if (res < (1 / 3))
 		{
 			res = (1 / 3);
 		}
@@ -679,37 +659,28 @@ export class SwissTournamentController
 		return res;
 	}
 
-	computeOpponentGameWinPercent(playerId, roundIndexMax)
+	computeOpponentGameWinPercent(playerId, matches)
 	{
-		roundIndexMax = (roundIndexMax >= 0 ? roundIndexMax : +Infinity);
-
-		var matches = this.playerMatches(playerId, -1, roundIndexMax);
-
-		var acc = 0;
-		var opponentCount = 0;
-		
-		for (var i = 0; i < matches.length; i++)
+		let acc = 0;
+		let opponentCount = 0;
+		for (let i = 0; i < matches.length; i++)
 		{
-			var match = matches[i];
+			let match = matches[i];
 			if (match.state === MatchState.Finished)
 			{
-				var opponentId = (match.p1 === playerId ? match.p2 : match.p1);
-				if (opponentId !== -1)
-				{
-					acc += this.computePlayerGameWinPercent(opponentId, roundIndexMax);
-					opponentCount++;
-				}
+				let opponentId = (match.p1 === playerId ? match.p2 : match.p1);
+				acc += this.computePlayerGameWinPercent(opponentId, matches);
 			}
 		}
 
-		var res = 0;
+		let res = 0;
 
 		if (opponentCount > 0)
 		{
 			res = acc / opponentCount;
 		}
 
-		if (res < 1 / 3)
+		if (res < (1 / 3))
 		{
 			res = (1 / 3);
 		}
@@ -724,14 +695,14 @@ export class SwissTournamentController
 
 	currentRoundScoresEntered()
 	{
-		var currentRound = this.currentRound();
+		let currentRound = this.currentRound();
 
 		if (currentRound < 0)
 		{
 			return false;
 		}
 
-		var oneMatchNotFinished = this.rounds[currentRound].some(match => match.state === MatchState.Pending);
+		let oneMatchNotFinished = this.rounds[currentRound].some(match => match.state === MatchState.Pending);
 		if (oneMatchNotFinished)
 		{
 			return false;
@@ -746,7 +717,7 @@ export class SwissTournamentController
 		{
 			if (this.roundCount() == 0 || this.currentRoundScoresEntered()) // There is no rounds, or the scores are entered
 			{
-				var playersReadyToNewRound = this.players.filter(p => p.drop === false);
+				let playersReadyToNewRound = this.players.filter(p => p.drop === false);
 				if (playersReadyToNewRound.length >= 2) // There is at least 2 players left (no dropped)
 				{
 					return true;
@@ -773,10 +744,10 @@ export class SwissTournamentController
 			"byMatch": [],
 			"total": 0
 		};
-		for (var p = 0; p < players.length; p += 2) // We ignore the last player if players.length is odd (bye)
+		for (let p = 0; p < players.length; p += 2) // We ignore the last player if players.length is odd (bye)
 		{
-			var player = players[p];
-			var opponent = players[p + 1]
+			let player = players[p];
+			let opponent = players[p + 1]
 
 			let score = 0;
 			if (player.matchPoints != opponent.matchPoints)
@@ -795,7 +766,7 @@ export class SwissTournamentController
 		{
 			let computingWorker = new Worker("js/swissTournamentWorker.js");
 
-			persistantData.onlyPerfect = true;
+			persistantData.onlyPerfect = false;
 
 			let data = {
 				"CMD": "START",
@@ -861,7 +832,7 @@ export class SwissTournamentController
 			return;
 		}
 
-		let playersToPair = this.players.filter(player => (player.drop === false));
+		let playersToPair = this.players.filter(player => player.drop === false);
 		
 		if (playersToPair.length < 2)
 		{
@@ -869,14 +840,16 @@ export class SwissTournamentController
 			return;
 		}
 
-		playersToPair = playersToPair.map(player => {
+		playersToPair = playersToPair.map(player =>
+		{
 			let playerId = this.players.indexOf(player);
+			let matches = this.playerMatches(playerId);
 			return {
 				"player": player,
 				"id": playerId,
-				"matchPoints": this.computePlayerMatchPoints(playerId),
-				"byeCount": this.computeByeCount(playerId),
-				"potentialOpponents": playersToPair.filter(opponent => (player !== opponent && !this.matchAlreadyPlayed(playerId, this.players.indexOf(opponent)))),
+				"matchPoints": this.computePlayerMatchPoints(playerId, matches),
+				"byeCount": this.computeByeCount(matches),
+				"potentialOpponents": playersToPair.filter(opponent => player !== opponent && !this.matchAlreadyPlayed(playerId, this.players.indexOf(opponent))),
 				"canBye": true
 			};
 		});
@@ -894,7 +867,7 @@ export class SwissTournamentController
 			});
 		}
 
-		this.generateTiebreaker4();
+		//this.generateTiebreaker4();
 
 		playersToPair = playersToPair.sort((p1, p2) => (p2.matchPoints - p1.matchPoints) || (p1.player.tb4 - p2.player.tb4)); // Sort Match points DESC, Tie breaker 4 DESC
 
@@ -911,7 +884,7 @@ export class SwissTournamentController
 			"minScore": +Infinity,
 			"passes": 0,
 			"skips": [],
-			"timeout": (this.players.length / 10), // seconds
+			"timeout": +Infinity,//(this.players.length / 10), // seconds
 			"minimalPossibleScore": {
 				"byMatch": [],
 				"total": 0
@@ -960,7 +933,7 @@ export class SwissTournamentController
 				}
 			}
 
-			for (var i = 0; i < maxThreads; i++)
+			for (let i = 0; i < maxThreads; i++)
 			{
 				launchNext.f();
 			}
@@ -1018,7 +991,7 @@ export class SwissTournamentController
 
 			this.selectedRound = round;
 
-			this.generateTiebreaker4();
+			//this.generateTiebreaker4();
 
 			this.refreshScores();
 
@@ -1035,9 +1008,9 @@ export class SwissTournamentController
 
 	generateTiebreaker4()
 	{
-		for (var i = 0; i < this.players.length; i++)
+		for (let i = 0; i < this.players.length; i++)
 		{
-			var player = this.players[i];
+			let player = this.players[i];
 			do
 			{
 				player.tb4 = Math.floor(10001 * Math.random());
@@ -1069,7 +1042,7 @@ export class SwissTournamentController
 			this.players.map(player => player.tb4 = 0);
 		}
 
-		var currentRound = this.currentRound();
+		let currentRound = this.currentRound();
 
 		this.players.map(player => {
 			if (player.drop > currentRound)
@@ -1122,12 +1095,12 @@ export class SwissTournamentController
 
 	addPlayer(playerName)
 	{
-		if (playerName == "")
+		if (this.roundCount() > 0)
 		{
 			return;
 		}
 
-		if (this.roundCount() > 0)
+		if (!playerName || playerName.includes('|') || playerName.includes('/'))
 		{
 			return;
 		}
@@ -1149,12 +1122,22 @@ export class SwissTournamentController
 
 	removePlayer(player)
 	{
+		if (!player)
+		{
+			return;
+		}
+
+		if (this.roundCount() > 0)
+		{
+			return;
+		}
+
 		if (!confirm("You will DELETE " + player.name + ". Are you sure?"))
 		{
 			return;
 		}
 
-		var idx = this.players.indexOf(player);
+		let idx = this.players.indexOf(player);
 
 		if (idx >= 0)
 		{
@@ -1184,7 +1167,7 @@ export class SwissTournamentController
 	{
 		console.log("load");
 
-		var players = Cookie.loadData("players");
+		let players = Cookie.loadData("players");
 		if (players)
 		{
 			this.players = this.deserializePlayers(players);
@@ -1192,7 +1175,7 @@ export class SwissTournamentController
 
 		console.log("Players", this.players);
 
-		var matches = Cookie.loadData("rounds");
+		let matches = Cookie.loadData("rounds");
 		if (matches)
 		{
 			this.rounds = this.deserializeRounds(matches);
@@ -1226,7 +1209,7 @@ export class SwissTournamentController
 
 	deserializeRounds(matches)
 	{
-		var rounds = matches.split('{').map(r => r.split('|').map(m2 =>
+		let rounds = matches.split('{').map(r => r.split('|').map(m2 =>
 		{
 			let m = m2.split('/');
 			return this.createMatch((m[3] ? MatchState.Finished : MatchState.Bye), parseInt(m[0]), parseInt(m[3]), parseInt(m[1]), parseInt(m[2]));
@@ -1236,18 +1219,18 @@ export class SwissTournamentController
 
 	export()
 	{
-		var jsonObj = {
+		let jsonObj = {
 			version: "0.1",
 			origin: (document.location.href || ""),
 			players: this.players,
 			rounds: this.rounds,
 			selectedRound: this.selectedRound
 		};
-		var jsonStr = "data:text/json;charset=utf-8," + encodeURIComponent(angular.toJson(jsonObj));
-		var dlAnchorElem = document.createElement('a');
+		let jsonStr = "data:text/json;charset=utf-8," + encodeURIComponent(angular.toJson(jsonObj));
+		let dlAnchorElem = document.createElement('a');
 		dlAnchorElem.setAttribute("href", jsonStr);
-		var now = new Date();
-		var fileName = "MTG-Tournament-" + now.getFullYear() + now.getMonth() + now.getDay() + "-" + now.getHours() + now.getMinutes() + now.getSeconds() + ".json";
+		let now = new Date();
+		let fileName = "MTG-Tournament-" + now.getFullYear() + now.getMonth() + now.getDay() + "-" + now.getHours() + now.getMinutes() + now.getSeconds() + ".json";
 		dlAnchorElem.setAttribute("download", fileName);
 		dlAnchorElem.click();
 	}
@@ -1262,7 +1245,7 @@ export class SwissTournamentController
 		console.log("Import", file);
 
 		return this.q((resolve, reject) => {
-			var reader = new FileReader();
+			let reader = new FileReader();
 			reader.onload = (e) => resolve(reader.result);
 			reader.onerror = (e) => reject(e);
 			reader.readAsText(file);
@@ -1271,7 +1254,7 @@ export class SwissTournamentController
 
 	importFileChange(event)
 	{
-		var files = event.target.files;
+		let files = event.target.files;
 
 		if (files.length <= 0)
 		{
@@ -1286,7 +1269,7 @@ export class SwissTournamentController
 		this.loadFile(files[0])
 			.then((data) =>
 		{
-			var json = JSON.parse(data);
+				let json = JSON.parse(data);
 			this.players = json.players;
 			this.rounds = json.rounds;
 			this.selectedRound = json.selectedRound;
