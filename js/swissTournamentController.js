@@ -764,7 +764,7 @@ export class SwissTournamentController
 			});
 		}
 
-		this.generateTiebreaker4();
+		//this.generateTiebreaker4();
 
 		playersToPair = playersToPair.sort((p1, p2) => (p2.matchPoints - p1.matchPoints) || (p1.player.tb4 - p2.player.tb4)); // Sort Match points DESC, Tie breaker 4 DESC
 
@@ -888,7 +888,7 @@ export class SwissTournamentController
 
 			this.selectedRound = round;
 
-			this.generateTiebreaker4();
+			//this.generateTiebreaker4();
 
 			this.refreshScores();
 
