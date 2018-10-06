@@ -15,6 +15,7 @@ export class SwissTournamentController
 		this.scope = $scope;
 		this.route = $route;
 		this.q = $q;
+		this.debug = true;
 		
 		this.MatchState = MatchState;
 
@@ -26,6 +27,12 @@ export class SwissTournamentController
 		this.allScores = [];
 		this.playerNameToAdd = "";
 		this.selectedPlayerId = null;
+
+		this.sep1 = '/';
+		this.sep2 = '|';
+		this.sep3 = '{';
+		this.oneOnThree = 1 / 3;
+		this.bestOf = 3;
 
 		this.load();
 
@@ -57,22 +64,6 @@ export class SwissTournamentController
 			"score2": (opponentScore || 0),
 			"roundNotFinished": (roundNotFinished || 0)
         };
-	}
-
-	createScore()
-	{
-		return {
-			"matchesWin": 0,
-			"matchesDraw": 0,
-			"matchesLoose": 0,
-			"byes": 0,
-			"matchPoints": 0,
-			"gamePoints": 0,
-			"matchWinPercent": 0,
-			"opponentMatchWinPercent": 0,
-			"gameWinPercent": 0,
-			"opponentGameWinPercent": 0
-		};
 	}
 
 	canDrop(playerId)
@@ -166,8 +157,10 @@ export class SwissTournamentController
 			{
 				if (match.state === MatchState.Pending)
 				{
-					match.score1 = Math.floor((Math.random() * 3));
-					match.score2 = Math.floor((Math.random() * 3));
+					let scoreMax = Math.floor(this.bestOf / 2) + 1;
+					match.score1 = Math.floor(Math.random() * (scoreMax + 1));
+					match.score2 = Math.floor(Math.random() * (this.bestOf - match.score1 + 1));
+					match.roundNotFinished = ((match.score1 + match.score2) === this.bestOf ? 0 : (Math.random() > 0.5 ? 1 : 0));
 					match.state = MatchState.Validated;
 					changed = true;
 				}
@@ -231,7 +224,7 @@ export class SwissTournamentController
 
 	canAddPlayer(playerName)
 	{
-		if (!playerName || playerName.length == 0 || playerName.indexOf('|') !== -1 || playerName.indexOf("\\") !== -1)
+		if (!playerName || playerName.length == 0 || playerName.includes(this.sep1) || playerName.includes(this.sep2))
 		{
 			return false;
 		}
@@ -355,17 +348,28 @@ export class SwissTournamentController
 				let score = scores[playerId];
 				if (!score)
 				{
-					scores[playerId] = score = createScore();
+					scores[playerId] = score = {};
 				}
 
 				score.playerId = playerId;
 				score.player = this.players[playerId];
 
+				score.matchesWin = 0;
+				score.matchesDraw = 0;
+				score.matchesLoose = 0;
+				score.byes = 0;
+				score.matchPoints = 0;
+				score.matchWinPercent = 0;
+				score.opponentMatchWinPercent = 0;
+				score.gamePoints = 0;
+				score.gameWinPercent = 0;
+				score.opponentGameWinPercent = 0;
+
 				let matches = this.playerMatches(playerId, -1, round);
+				score.matches = matches;
 
 				let roundsPlayed = 0;
 				let gamesPlayed = 0;
-				score.gamePoints = 0;
 				for (let i = 0; i < matches.length; i++)
 				{
 					let match = matches[i];
@@ -393,7 +397,7 @@ export class SwissTournamentController
 						}
 						else if (match.state === MatchState.Bye)
 						{
-							score.gamePoints += (3 * 2); // TODO (this is hardcoded)
+							score.gamePoints += (Math.floor((this.bestOf / 2) + 1) * 2);
 							gamesPlayed += 2;
 							score.matchesWin++;
 							match.byes++;
@@ -407,38 +411,69 @@ export class SwissTournamentController
 				{
 					score.matchWinPercent = score.matchPoints / (3 * roundsPlayed);
 				}
-				if (score.matchWinPercent < (1 / 3))
+				if (score.matchWinPercent < this.oneOnThree)
 				{
-					score.matchWinPercent = (1 / 3);
+					score.matchWinPercent = this.oneOnThree;
 				}
 				
-				// TODO: score.opponentMatchWinPercent = this.computeOpponentMatchWinPercent(playerId, matches);
-
 				if (gamesPlayed > 0)
 				{
-					score.matchWinPercent = score.gamePoints / (3 * gamesPlayed);
+					score.gameWinPercent = score.gamePoints / (3 * gamesPlayed);
 				}
-				if (score.matchWinPercent < (1 / 3))
+				if (score.gameWinPercent < this.oneOnThree)
 				{
-					score.matchWinPercent = (1 / 3);
+					score.gameWinPercent = this.oneOnThree;
+				}
+			}
+
+			// Second pass to compute opponent game and match win percentage
+			
+			for (let playerId = 0; playerId < this.players.length; playerId++)
+			{
+				if (playersToRefresh && playersToRefresh.length > 0 && playersToRefresh.indexOf(playerId) === -1)
+				{
+					continue;
 				}
 
-				return res;
+				let score = scores[playerId];
+				
+				let opponentCount = 0;
+				let matchWinCount = 0;
+				let gameWinCount = 0;
+				for (let i = 0; i < score.matches; i++)
+				{
+					let match = score.matches[i];
+					if (match.state === MatchState.Validated)
+					{
+						let opponentId = (match.p1 === playerId ? match.p2 : match.p1);
+						if (opponentId >= 0)
+						{
+							let opponentScore = scores.find(s => s.playerId === opponentId);
+							if (opponentScore)
+							{
+								opponentCount++;
+								matchWinCount += opponentScore.matchWinPercent;
+								gameWinCount += opponentScore.gameWinPercent;
+							}
+						}
+					}
+				}
 
-				// TODO: score.opponentGameWinPercent = this.computeOpponentGameWinPercent(playerId, matches);
+				if (opponentCount > 0)
+				{
+					score.opponentMatchWinPercent = matchWinCount / opponentCount;
+					score.opponentGameWinPercent = gameWinCount / opponentCount;
+				}
+				if (score.opponentMatchWinPercent < this.oneOnThree)
+				{
+					score.opponentMatchWinPercent = this.oneOnThree;
+				}
+				if (score.opponentGameWinPercent < this.oneOnThree)
+				{
+					score.opponentGameWinPercent = this.oneOnThree;
+				}
 
-				let matchesWin = this.computeMatchesWin(playerId, matches);
-				let matchesDraw = this.computeMatchesDraw(matches);
-				let matchesLoose = this.computeMatchesLoose(playerId, matches);
-				let byes = this.computeByeCount(matches);
-
-				let matchPoints = this.computePlayerMatchPoints(playerId, matches);
-				let matchWinPercent = this.computePlayerMatchWinPercent(playerId, matches);
-				let opponentMatchWinPercent = this.computeOpponentMatchWinPercent(playerId, matches);
-
-				let gamePoints = this.computePlayerGamePoints(playerId, matches);
-				let gameWinPercent = this.computePlayerGameWinPercent(playerId, matches);
-				let opponentGameWinPercent = this.computeOpponentGameWinPercent(playerId, matches);
+				delete score.matches;
 			}
 		}
 
@@ -477,6 +512,8 @@ export class SwissTournamentController
 			// random sort DESC
 			return (Math.random() > 0.5 ? 1 : -1);
 		}));
+
+		console.log("scores", this.allScores);
 	}
 
 	playerMatches(playerId1, playerId2, roundIndexMax)
@@ -486,7 +523,7 @@ export class SwissTournamentController
 			return [];
 		}
 
-		if (!playerId2)
+		if (playerId2 == null)
 		{
 			playerId2 = -1;
 		}
@@ -537,232 +574,9 @@ export class SwissTournamentController
 		return winDiff;
 	}
 
-	matchAlreadyPlayed(playerId1, playerId2, roundIndexMax)
-	{
-		if (!playerId1 || !playerId2)
-		{
-			return 0;
-		}
-		
-		roundIndexMax = (roundIndexMax >= 0 ? roundIndexMax : +Infinity);
-
-		return this.playerMatches(playerId1, playerId2, roundIndexMax).length;
-	}
-
 	getPlayerFromName(playerName)
 	{
 		return this.players.find(player => (player.name === playerName));
-	}
-
-	computeMatchesWin(playerId, matches)
-	{
-		let matchesWin = 0;
-		for (let i = 0; i < matches.length; i++)
-		{
-			let match = matches[i];
-			if (match.state === MatchState.Validated && ((match.p1 === playerId && match.score1 > match.score2) || (match.p2 === playerId && match.score1 < match.score2))
-			|| match.state === MatchState.Bye && match.p1 === playerId)
-			{
-				matchesWin++;
-			}
-		}
-		return matchesWin;
-	}
-
-	hasABye(matches)
-	{
-		return matches.some(match => match.state === MatchState.Bye);
-	}
-
-	computeByeCount(matches)
-	{
-		let byes = 0;
-		for (let i = 0; i < matches.length; i++)
-		{
-			let match = matches[i];
-			if (match.state === MatchState.Bye)
-			{
-				byes++;
-			}
-		}
-		return byes;
-	}
-
-	computeMatchesLoose(playerId, matches)
-	{
-		let matchesLoose = 0;
-		for (let i = 0; i < matches.length; i++)
-		{
-			let match = matches[i];
-			if (match.state === MatchState.Validated)
-			{
-				if ((match.p1 === playerId && match.score1 < match.score2)
-				|| (match.p2 === playerId && match.score1 > match.score2))
-				{
-					matchesLoose++;
-				}
-			}
-		}
-		return matchesLoose;
-	}
-
-	computeMatchesDraw(matches)
-	{
-		let matchesDraw = 0;
-		for (let i = 0; i < matches.length; i++)
-		{
-			let match = matches[i];
-			if (match.state === MatchState.Validated && match.score1 === match.score2)
-			{
-				matchesDraw++;
-			}	
-		}
-		return matchesDraw;
-	}
-
-	computePlayerMatchPoints(playerId, matches)
-	{
-		let winCount = this.computeMatchesWin(playerId, matches);
-		let drawCount = this.computeMatchesDraw(matches);
-		return (3 * winCount + drawCount);
-	}
-
-	computePlayerMatchWinPercent(playerId, matches)
-	{
-		let roundsPlayed = 0;
-		for (let i = 0; i < matches.length; i++)
-		{
-			let match = matches[i];
-			if (match.state !== MatchState.Pending)
-			{
-				roundsPlayed++;
-			}
-		}
-		
-		let res = 0;
-		
-		if (roundsPlayed > 0)
-		{
-			let matchPoints = this.computePlayerMatchPoints(playerId, matches);
-			res = matchPoints / (3 * roundsPlayed);
-		}
-
-		if (res < (1 / 3))
-		{
-			res = (1 / 3);
-		}
-
-		return res;
-	}
-
-	computeOpponentMatchWinPercent(playerId, matches)
-	{
-		let acc = 0;
-		let opponentCount = 0;
-		for (let i = 0; i < matches.length; i++)
-		{
-			let match = matches[i];
-			if (match.state === MatchState.Validated)
-			{
-				let opponentId = (match.p1 === playerId ? match.p2 : match.p1);
-				acc += this.computePlayerMatchWinPercent(opponentId, matches);
-				opponentCount++;
-			}
-		}
-
-		let res = 0;
-
-		if (opponentCount > 0)
-		{
-			res = acc / opponentCount;
-		}
-
-		if (res < (1 / 3))
-		{
-			res = (1 / 3);
-		}
-
-		return res;
-	}
-
-	computePlayerGamePoints(playerId, matches)
-	{
-		let gamePoints = 0;
-		for (let i = 0; i < matches.length; i++)
-		{
-			let match = matches[i];
-			if (match.state === MatchState.Validated)
-			{
-				let playerScore = (match.p1 === playerId ? match.score1 : match.score2);
-				gamePoints += (3 * playerScore);
-			}
-			else if (match.state === MatchState.Bye)
-			{
-				gamePoints += (3 * 2); // TODO (this is hardcoded)
-			}
-		}
-		return gamePoints;
-	}
-
-	computePlayerGameWinPercent(playerId, matches)
-	{
-		let gamesPlayed = 0;
-		for (let i = 0; i < matches.length; i++)
-		{
-			let match = matches[i];
-			if (match.state === MatchState.Validated)
-			{
-				gamesPlayed += (match.score1 + match.score2);
-			}
-			else if (match.state === MatchState.Bye)
-			{
-				gamesPlayed += 2;
-			}
-		}
-
-		let res = 0;
-
-		if (gamesPlayed > 0)
-		{
-			let gamePoints = this.computePlayerGamePoints(playerId, matches);
-			res = gamePoints / (3 * gamesPlayed);
-		}
-
-		if (res < (1 / 3))
-		{
-			res = (1 / 3);
-		}
-
-		return res;
-	}
-
-	computeOpponentGameWinPercent(playerId, matches)
-	{
-		let acc = 0;
-		let opponentCount = 0;
-		for (let i = 0; i < matches.length; i++)
-		{
-			let match = matches[i];
-			if (match.state === MatchState.Validated)
-			{
-				let opponentId = (match.p1 === playerId ? match.p2 : match.p1);
-				acc += this.computePlayerGameWinPercent(opponentId, matches);
-			}
-		}
-
-		let res = 0;
-
-		if (opponentCount > 0)
-		{
-			res = acc / opponentCount;
-		}
-
-		if (res < (1 / 3))
-		{
-			res = (1 / 3);
-		}
-
-		return res;
 	}
 
 	forDisplay(value)
@@ -917,16 +731,22 @@ export class SwissTournamentController
 			return;
 		}
 
+		let scores = this.allScores[this.currentRound()];
 		playersToPair = playersToPair.map(player =>
 		{
 			let playerId = this.players.indexOf(player);
+			let score = scores && scores.find(s => s.playerId === playerId);
+			let matchPoints = (score ? score.matchPoints : 0);
+			let byesCount = (score ? score.byes : 0);
 			let matches = this.playerMatches(playerId);
+			let alreadyPlayedOpponents = matches.map(match => (match.state === MatchState.Validated ? (match.p1 === playerId ? match.p2 : match.p1) : null));
+			let potentialOpponents = playersToPair.filter(opponent => (playerId !== opponent.playerId && alreadyPlayedOpponents.indexOf(opponent.playerId) === -1));
 			return {
 				"player": player,
 				"id": playerId,
-				"matchPoints": this.computePlayerMatchPoints(playerId, matches),
-				"byeCount": this.computeByeCount(matches),
-				"potentialOpponents": playersToPair.filter(opponent => player !== opponent && !this.matchAlreadyPlayed(playerId, this.players.indexOf(opponent))),
+				"matchPoints": matchPoints,
+				"byeCount": byesCount,
+				"potentialOpponents": potentialOpponents,
 				"canBye": true
 			};
 		});
@@ -944,7 +764,7 @@ export class SwissTournamentController
 			});
 		}
 
-		//this.generateTiebreaker4();
+		this.generateTiebreaker4();
 
 		playersToPair = playersToPair.sort((p1, p2) => (p2.matchPoints - p1.matchPoints) || (p1.player.tb4 - p2.player.tb4)); // Sort Match points DESC, Tie breaker 4 DESC
 
@@ -1068,7 +888,7 @@ export class SwissTournamentController
 
 			this.selectedRound = round;
 
-			//this.generateTiebreaker4();
+			this.generateTiebreaker4();
 
 			this.refreshScores();
 
@@ -1177,7 +997,7 @@ export class SwissTournamentController
 			return;
 		}
 
-		if (!playerName || playerName.includes('|') || playerName.includes('/'))
+		if (!playerName || playerName.includes(this.sep1) || playerName.includes(this.sep2))
 		{
 			return;
 		}
@@ -1267,28 +1087,28 @@ export class SwissTournamentController
 
 	serializePlayers()
 	{
-		return this.players.map(p => p.name + '/' + p.tb4 + (p.drop !== false ? ('/' + p.drop) : '')).join('|');
+		return this.players.map(p => p.name + this.sep1 + p.tb4 + (p.drop !== false ? (this.sep1 + p.drop) : '')).join(this.sep2);
 	}
 
 	deserializePlayers(players)
 	{
-		return players.split('|').map(p2 =>
+		return players.split(this.sep2).map(p2 =>
 		{
-			let p = p2.split('/');
+			let p = p2.split(this.sep1);
 			return this.createPlayer(p[0], p[1], (p[2] != null ? parseInt(p[2]) : false));
 		});
 	}
 
 	serializeRounds()
 	{
-		return this.rounds.map(r => r.map(m => m.p1 + (m.state === MatchState.Bye ? '' : ('/' + m.p2 + '/' + m.score1 + '/' + m.score2 + (m.roundNotFinished ? ('/1'): '')))).join('|')).join('{');
+		return this.rounds.map(r => r.map(m => m.p1 + (m.state === MatchState.Bye ? '' : (this.sep1 + m.p2 + this.sep1 + m.score1 + this.sep1 + m.score2 + (m.roundNotFinished ? ('/1') : '')))).join(this.sep2)).join(this.sep3);
 	}
 
 	deserializeRounds(matches)
 	{
-		let rounds = matches.split('{').map(r => r.split('|').map(m2 =>
+		let rounds = matches.split(this.sep3).map(r => r.split(this.sep2).map(m2 =>
 		{
-			let m = m2.split('/');
+			let m = m2.split(this.sep1);
 			return this.createMatch((m[1] ? MatchState.Validated : MatchState.Bye), parseInt(m[0]), parseInt(m[1]), parseInt(m[2]), parseInt(m[3]), (m[4] ? 1 : 0));
 		}));
 		return rounds;

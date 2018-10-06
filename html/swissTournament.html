@@ -13,9 +13,9 @@
 					<a class="dropdown-item" id="importButton" href="" ng-click="ctrl.import()">Import</a>
 					<input type="file" accept=".json" id="importFile" ng-show="0" custom-on-change=" ctrl.importFileChange.bind(ctrl)">
 					<a class="dropdown-item" href="" ng-click="ctrl.export()">Export</a>
-					<div class="dropdown-divider"></div>
-					<a class="dropdown-item" id="add100RandomPlayers" href="" ng-click="ctrl.add100RandomPlayers()">Add 100 random Players</a>
-					<a class="dropdown-item" id="fillRandomScores" href="" ng-click="ctrl.fillRandomScores()">Fill random scores</a>
+					<div class="dropdown-divider" ng-show="ctrl.debug"></div>
+					<a class="dropdown-item" id="add100RandomPlayers" href="" ng-click="ctrl.add100RandomPlayers()" ng-show="ctrl.debug">Add 100 random Players</a>
+					<a class="dropdown-item" id="fillRandomScores" href="" ng-click="ctrl.fillRandomScores()" ng-show="ctrl.debug">Fill random scores</a>
 				</div>
 			</td>
 			<!-- Rounds -->
@@ -89,11 +89,11 @@
 							<td class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.forDisplay(score.matchesLoose)}}</td>
 							<td class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.forDisplay(score.matchesDraw)}}</td>
 							<th class="tc" ng-if="ctrl.roundCount() > 0"><span class="badge badge-dark">{{score.matchPoints}}</span></th>
-							<td class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.forDisplay(score.matchWinPercent).toFixed(3)}}</td>
-							<th class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.forDisplay(score.opponentMatchWinPercent).toFixed(3)}}</th>
+							<td class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.forDisplay(score.matchWinPercent.toFixed(3))}}</td>
+							<th class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.forDisplay(score.opponentMatchWinPercent.toFixed(3))}}</th>
 							<td class="tc" ng-if="ctrl.roundCount() > 0">{{score.gamePoints}}</td>
-							<th class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.forDisplay(score.gameWinPercent).toFixed(3)}}</th>
-							<th class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.forDisplay(score.opponentGameWinPercent).toFixed(3)}}</th>
+							<th class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.forDisplay(score.gameWinPercent.toFixed(3))}}</th>
+							<th class="tc" ng-if="ctrl.roundCount() > 0">{{ctrl.forDisplay(score.opponentGameWinPercent.toFixed(3))}}</th>
 						</tr>
 					</tbody>
 				</table>
@@ -143,14 +143,14 @@
 							<td class="tc vam">
 								<div class="btn-group-toggle">
 									<label class="btn btn-1" ng-class="{'active':match.state !== ctrl.MatchState.Validated}">
-										<input type="checkbox" autocomplete="off" ng-model="match.roundNotfinished" ng-change="ctrl.updateScore(match)" ng-true-value="1" ng-false-value="0"> {{match.roundNotfinished ? "Yes" : "No"}}
+										<input type="checkbox" autocomplete="off" ng-model="match.roundNotFinished" ng-change="ctrl.updateScore(match)" ng-true-value="1" ng-false-value="0" ng-disabled="match.state === ctrl.MatchState.Validated"> {{match.roundNotfinished ? "Yes" : "No"}}
 									</label>
 								</div>
 							</td>
 							<td class="tc vam">
 								<div class="btn-group-toggle" ng-show="ctrl.isCurrentRound()">
 									<label class="btn btn-1" ng-class="{'active':match.state === ctrl.MatchState.Validated}">
-										<input type="checkbox" autocomplete="off" ng-model="match.state" ng-change="ctrl.updateScore(match)" ng-true-value="1" ng-false-value="0"> {{match.state === ctrl.MatchState.Validated ? "Yes" : "No"}}
+										<input type="checkbox" autocomplete="off" ng-model="match.state" ng-change="ctrl.updateScore(match)" ng-true-value="1" ng-false-value="0" ng-disabled="!ctrl.isCurrentRound()"> {{match.state === ctrl.MatchState.Validated ? "Yes" : "No"}}
 									</label>
 								</div>
 							</td>

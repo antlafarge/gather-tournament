@@ -180,8 +180,8 @@ function tryToPairPlayers(playersToPair, result, persistantData, deep)
             // Manage passes (compute or retrieve 'alreadyPlayed' and 'differentMatchPoints')
             if (pass === 0)
             {
-                let alreadyPlayed = (p1.potentialOpponents.indexOf(p2.player) === -1);
-                let differentMatchPoints = (p1.matchPoints != p2.matchPoints);
+                alreadyPlayed = (p1.potentialOpponents.indexOf(p2.player) === -1);
+                differentMatchPoints = (p1.matchPoints != p2.matchPoints);
 
                 if (!alreadyPlayed)
                 {
