@@ -153,14 +153,26 @@ export class SwissTournamentController
 		if (round >= 0)
 		{
 			let changed = false;
+			let scoreMax = Math.floor(this.bestOf / 2) + 1;
 			this.rounds[round].forEach(match =>
 			{
 				if (match.state === MatchState.Pending)
 				{
-					let scoreMax = Math.floor(this.bestOf / 2) + 1;
 					match.score1 = Math.floor(Math.random() * (scoreMax + 1));
-					match.score2 = Math.floor(Math.random() * (this.bestOf - match.score1 + 1));
-					match.roundNotFinished = ((match.score1 + match.score2) === this.bestOf ? 0 : (Math.random() > 0.5 ? 1 : 0));
+					let scoreMax2 = (match.score1 === 2 ? (scoreMax - 1) : scoreMax);
+					match.score2 = Math.floor(Math.random() * (scoreMax2 + 1));
+					if (match.score1 === 0 && match.score2 === 0)
+					{
+						match.roundNotFinished = 1;
+					}
+					else if (match.score1 === scoreMax || match.score2 === scoreMax)
+					{
+						match.roundNotFinished = 0;
+					}
+					else
+					{
+						match.roundNotFinished = (Math.random() > 0.25 ? 1 : 0);
+					}
 					match.state = MatchState.Validated;
 					changed = true;
 				}
@@ -397,10 +409,11 @@ export class SwissTournamentController
 						}
 						else if (match.state === MatchState.Bye)
 						{
-							score.gamePoints += (Math.floor((this.bestOf / 2) + 1) * 2);
-							gamesPlayed += 2;
+							let gamesPlayedInMatch = Math.floor((this.bestOf / 2) + 1);
+							score.gamePoints += (gamesPlayedInMatch * 3);
+							gamesPlayed += gamesPlayedInMatch;
 							score.matchesWin++;
-							match.byes++;
+							score.byes++;
 						}
 					}
 				}
@@ -440,7 +453,7 @@ export class SwissTournamentController
 				let opponentCount = 0;
 				let matchWinCount = 0;
 				let gameWinCount = 0;
-				for (let i = 0; i < score.matches; i++)
+				for (let i = 0; i < score.matches.length; i++)
 				{
 					let match = score.matches[i];
 					if (match.state === MatchState.Validated)
@@ -781,7 +794,7 @@ export class SwissTournamentController
 			"minScore": +Infinity,
 			"passes": 0,
 			"skips": [],
-			"timeout": +Infinity,//(this.players.length / 10), // seconds
+			"timeout": Math.max(this.players.length / 100, 1), // seconds
 			"minimalPossibleScore": {
 				"byMatch": [],
 				"total": 0
