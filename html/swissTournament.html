@@ -122,7 +122,8 @@
 							<th class="tc">Player</th>
 							<th class="tc">Score</th>
 							<th class="tc">Opponent</th>
-							<th class="tc">Finished</th>
+							<th class="tc">Round not finished</th>
+							<th class="tc">Validation</th>
 						</tr>
 					</thead>
 					<tbody id="matches">
@@ -131,18 +132,25 @@
 							<th class="vam">{{ctrl.players[match.p1].name}}</th>
 							<td class="vam">
 								<div class="input-group input-group-lg">
-									<input type="number" class="form-control" ng-model="match.score1" ng-change="ctrl.updateScore(match)" ng-disabled="match.state === ctrl.MatchState.Finished">
+									<input type="number" class="form-control" ng-model="match.score1" ng-change="ctrl.updateScore(match)" ng-disabled="match.state === ctrl.MatchState.Validated">
 									<div class="input-group-prepend input-group-append">
 										<span class="input-group-text">vs</span>
 									</div>
-									<input type="number" class="form-control" ng-model="match.score2" ng-change="ctrl.updateScore(match)" ng-disabled="match.state === ctrl.MatchState.Finished">
+									<input type="number" class="form-control" ng-model="match.score2" ng-change="ctrl.updateScore(match)" ng-disabled="match.state === ctrl.MatchState.Validated">
 								</div>
 							</td>
 							<th class="vam">{{ctrl.players[match.p2].name}}</th>
 							<td class="tc vam">
+								<div class="btn-group-toggle">
+									<label class="btn btn-1" ng-class="{'active':match.state !== ctrl.MatchState.Validated}">
+										<input type="checkbox" autocomplete="off" ng-model="match.roundNotfinished" ng-change="ctrl.updateScore(match)" ng-true-value="1" ng-false-value="0"> {{match.roundNotfinished ? "Yes" : "No"}}
+									</label>
+								</div>
+							</td>
+							<td class="tc vam">
 								<div class="btn-group-toggle" ng-show="ctrl.isCurrentRound()">
-									<label class="btn btn-1" ng-class="{'active':match.state === ctrl.MatchState.Finished}">
-										<input type="checkbox" autocomplete="off" ng-model="match.state" ng-change="ctrl.updateScore(match)" ng-true-value="1" ng-false-value="0"> {{match.state === ctrl.MatchState.Finished ? "Yes" : "No"}}
+									<label class="btn btn-1" ng-class="{'active':match.state === ctrl.MatchState.Validated}">
+										<input type="checkbox" autocomplete="off" ng-model="match.state" ng-change="ctrl.updateScore(match)" ng-true-value="1" ng-false-value="0"> {{match.state === ctrl.MatchState.Validated ? "Yes" : "No"}}
 									</label>
 								</div>
 							</td>

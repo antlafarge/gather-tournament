@@ -257,7 +257,8 @@ function tryToPairPlayers(playersToPair, result, persistantData, deep)
             // Copy playersToPair
             let newPlayersToPair = newArray();
             copyArray(playersToPair, newPlayersToPair);
-            newPlayersToPair.splice(o, 1);
+            let p2Index = playersToPair.indexOf(p2);
+            newPlayersToPair.splice(p2Index, 1);
 
             if (newPlayersToPair.length > 0)
             {
