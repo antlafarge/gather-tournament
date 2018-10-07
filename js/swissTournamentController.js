@@ -180,7 +180,7 @@ export class SwissTournamentController
 
 			if (changed)
 			{
-				this.refreshScores();
+				this.refreshScores(false, null, [this.currentRound()]);
 				this.save();
 			}
 
@@ -337,7 +337,7 @@ export class SwissTournamentController
 
 		for (let round = 0; round < this.allScores.length; round++)
 		{
-			if (roundsToRefresh && roundsToRefresh.length > 0 && roundsToRefresh.indexOf(round) === -1)
+			if (!refreshAll && roundsToRefresh && roundsToRefresh.length > 0 && roundsToRefresh.indexOf(round) === -1)
 			{
 				continue;
 			}
@@ -350,17 +350,31 @@ export class SwissTournamentController
 
 			scores.length = this.players.length;
 
+			// First pass to compute basic informations
+
 			for (let playerId = 0; playerId < this.players.length; playerId++)
 			{
-				if (playersToRefresh && playersToRefresh.length > 0 && playersToRefresh.indexOf(playerId) === -1)
+				let score;
+
+				if (!refreshAll && playersToRefresh && playersToRefresh.length > 0)
 				{
-					continue;
+					if (playersToRefresh.indexOf(playerId) !== -1)
+					{
+						score = scores.find(s => s.playerId === playerId);
+					}
+					else
+					{
+						continue;
+					}
 				}
 
-				let score = scores[playerId];
 				if (!score)
 				{
-					scores[playerId] = score = {};
+					score = scores[playerId];
+					if (!score)
+					{
+						scores[playerId] = score = {};
+					}
 				}
 
 				score.playerId = playerId;
@@ -443,12 +457,24 @@ export class SwissTournamentController
 			
 			for (let playerId = 0; playerId < this.players.length; playerId++)
 			{
-				if (playersToRefresh && playersToRefresh.length > 0 && playersToRefresh.indexOf(playerId) === -1)
+				let score;
+
+				if (!refreshAll && playersToRefresh && playersToRefresh.length > 0)
 				{
-					continue;
+					if (playersToRefresh.indexOf(playerId) !== -1)
+					{
+						score = scores.find(s => s.playerId === playerId);
+					}
+					else
+					{
+						continue;
+					}
 				}
 
-				let score = scores[playerId];
+				if (!score)
+				{
+					score = scores[playerId];
+				}
 				
 				let opponentCount = 0;
 				let matchWinCount = 0;
@@ -488,43 +514,45 @@ export class SwissTournamentController
 
 				delete score.matches;
 			}
+
+			// Sort
+
+			scores.sort((score1, score2) =>
+			{
+				// Match points DESC
+				if (score1.matchPoints != score2.matchPoints)
+				{
+					return (score2.matchPoints - score1.matchPoints);
+				}
+
+				// Tie breaker 1 DESC
+				if (score1.opponentMatchWinPercent != score2.opponentMatchWinPercent)
+				{
+					return (score2.opponentMatchWinPercent - score1.opponentMatchWinPercent);
+				}
+
+				// Tie breaker 2 DESC
+				if (score1.gameWinPercent != score2.gameWinPercent)
+				{
+					return (score2.gameWinPercent - score1.gameWinPercent);
+				}
+
+				// Tie breaker 3 DESC
+				if (score1.opponentGameWinPercent != score2.opponentGameWinPercent)
+				{
+					return (score2.opponentGameWinPercent - score1.opponentGameWinPercent);
+				}
+
+				// Tie breaker 4 DESC
+				if (score1.player.tb4 != score2.player.tb4)
+				{
+					return (score2.player.tb4 - score1.player.tb4);
+				}
+
+				// random sort DESC
+				return (Math.random() > 0.5 ? 1 : -1);
+			});
 		}
-
-		this.allScores.forEach(scores => scores.sort((score1, score2) =>
-		{
-			// Match points DESC
-			if (score1.matchPoints != score2.matchPoints)
-			{
-				return (score2.matchPoints - score1.matchPoints);
-			}
-
-			// Tie breaker 1 DESC
-			if (score1.opponentMatchWinPercent != score2.opponentMatchWinPercent)
-			{
-				return (score2.opponentMatchWinPercent - score1.opponentMatchWinPercent);
-			}
-
-			// Tie breaker 2 DESC
-			if (score1.gameWinPercent != score2.gameWinPercent)
-			{
-				return (score2.gameWinPercent - score1.gameWinPercent);
-			}
-
-			// Tie breaker 3 DESC
-			if (score1.opponentGameWinPercent != score2.opponentGameWinPercent)
-			{
-				return (score2.opponentGameWinPercent - score1.opponentGameWinPercent);
-			}
-
-			// Tie breaker 4 DESC
-			if (score1.player.tb4 != score2.player.tb4)
-			{
-				return (score2.player.tb4 - score1.player.tb4);
-			}
-
-			// random sort DESC
-			return (Math.random() > 0.5 ? 1 : -1);
-		}));
 
 		console.log("scores", this.allScores);
 	}
@@ -777,7 +805,7 @@ export class SwissTournamentController
 			});
 		}
 
-		//this.generateTiebreaker4();
+		this.generateTiebreaker4();
 
 		playersToPair = playersToPair.sort((p1, p2) => (p2.matchPoints - p1.matchPoints) || (p1.player.tb4 - p2.player.tb4)); // Sort Match points DESC, Tie breaker 4 DESC
 
@@ -901,9 +929,9 @@ export class SwissTournamentController
 
 			this.selectedRound = round;
 
-			//this.generateTiebreaker4();
+			this.generateTiebreaker4();
 
-			this.refreshScores();
+			this.refreshScores(false, null, [this.currentRound()]);
 
 			this.save();
 
@@ -966,14 +994,41 @@ export class SwissTournamentController
 			this.selectedRound = Math.max(0, currentRound);
 		}
 		
-		this.refreshScores();
+		this.refreshScores(false, null, [this.currentRound() + 1]);
 
 		this.save();
 	}
 
 	updateScore(match)
 	{
-		this.refreshScores();
+		let playersToRefresh;
+		
+		if (match)
+		{
+			let players2 = [];
+
+			if (match.p1 >= 0)
+			{
+				players2.push(match.p1);
+			}
+
+			if (match.p2 >= 0)
+			{
+				players2.push(match.p2);
+			}
+
+			playersToRefresh = [].concat(players2);
+
+			for (let i = 0; i < players2.length; i++)
+			{
+				let playerId = players2[i];
+				let matches = this.playerMatches(match.p1);
+				let players3 = matches.map(match => (match.p1 === playerId ? match.p2 : match.p1)).filter(p => (p && p != playerId));
+				playersToRefresh = playersToRefresh.concat(players3);
+			}
+		}
+
+		this.refreshScores(false, playersToRefresh, [this.currentRound()]);
 
 		this.save();
 	}
