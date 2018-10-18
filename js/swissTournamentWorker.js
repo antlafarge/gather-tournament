@@ -5,14 +5,12 @@ let MatchState =
     Bye: 2
 };
 
-function createMatch(matchState, playerId, opponentId, playerScore, opponentScore)
+function createMatch(playerId, opponentId)
 {
     let match = newObject();
-    match.state = (matchState || MatchState.Pending);
+    match.roundNotFinished = 0;
     match.p1 = (playerId >= 0 ? playerId : -1);
     match.p2 = (opponentId >= 0 ? opponentId : -1);
-    match.score1 = (playerScore || 0);
-    match.score2 = (opponentScore || 0);
     return match;
 }
 
@@ -103,6 +101,14 @@ port.onmessage = (ev) =>
         let persistantData = ev.data.persistantData;
         let deep = ev.data.deep;
         let res = tryToPairPlayers(playersToPair, result, persistantData, deep);
+        if (result && result.matches)
+        {
+            result.matches.forEach(match => {
+                match.state = MatchState.Pending;
+                match.score1 = 0;
+                match.score2 = 0;
+            });
+        }
         port.postMessage({
             "CMD": "END",
             "res": res,
@@ -250,8 +256,7 @@ function tryToPairPlayers(playersToPair, result, persistantData, deep)
             copyArray(result.matches, result2.matches);
 
             // Add match to matches
-            let match = createMatch(MatchState.Pending, p1.id, p2.id);
-            match.score = score;
+            let match = createMatch(p1.id, p2.id);
             result2.matches.push(match);
 
             // Copy playersToPair

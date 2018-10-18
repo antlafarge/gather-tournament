@@ -337,7 +337,7 @@ export class SwissTournamentController
 
 		for (let round = 0; round < this.allScores.length; round++)
 		{
-			if (!refreshAll && roundsToRefresh && roundsToRefresh.length > 0 && roundsToRefresh.indexOf(round) === -1)
+			if (!refreshAll && roundsToRefresh && roundsToRefresh.indexOf(round) === -1)
 			{
 				continue;
 			}
@@ -345,40 +345,27 @@ export class SwissTournamentController
 			let scores = this.allScores[round];
 			if (!scores)
 			{
-				this.allScores[round] = scores = [];
+				scores = new Array(this.players.length);
+				for (let playerId = 0; playerId < this.players.length; playerId++)
+				{
+					scores[playerId] = {
+						playerId: playerId,
+						player: this.players[playerId]
+					};
+				}
+				this.allScores[round] = scores;
 			}
-
-			scores.length = this.players.length;
 
 			// First pass to compute basic informations
 
 			for (let playerId = 0; playerId < this.players.length; playerId++)
 			{
-				let score;
-
-				if (!refreshAll && playersToRefresh && playersToRefresh.length > 0)
+				if (!refreshAll && playersToRefresh && playersToRefresh.indexOf(playerId) === -1)
 				{
-					if (playersToRefresh.indexOf(playerId) !== -1)
-					{
-						score = scores.find(s => s.playerId === playerId);
-					}
-					else
-					{
-						continue;
-					}
+					continue;
 				}
 
-				if (!score)
-				{
-					score = scores[playerId];
-					if (!score)
-					{
-						scores[playerId] = score = {};
-					}
-				}
-
-				score.playerId = playerId;
-				score.player = this.players[playerId];
+				let score = scores.find(s => s.playerId === playerId);
 
 				score.matchesWin = 0;
 				score.matchesDraw = 0;
@@ -391,14 +378,13 @@ export class SwissTournamentController
 				score.gameWinPercent = 0;
 				score.opponentGameWinPercent = 0;
 
-				let matches = this.playerMatches(playerId, -1, round);
-				score.matches = matches;
+				score.matches = this.playerMatches(playerId, -1, round); // field deleted in second pass
 
 				let roundsPlayed = 0;
 				let gamesPlayed = 0;
-				for (let i = 0; i < matches.length; i++)
+				for (let i = 0; i < score.matches.length; i++)
 				{
-					let match = matches[i];
+					let match = score.matches[i];
 
 					if (match.state !== MatchState.Pending)
 					{
@@ -1022,9 +1008,16 @@ export class SwissTournamentController
 			for (let i = 0; i < players2.length; i++)
 			{
 				let playerId = players2[i];
-				let matches = this.playerMatches(match.p1);
-				let players3 = matches.map(match => (match.p1 === playerId ? match.p2 : match.p1)).filter(p => (p && p != playerId));
-				playersToRefresh = playersToRefresh.concat(players3);
+				let matches = this.playerMatches(playerId);
+				for (let m = 0; m < matches.length; m++)
+				{
+					let match = matches[m];
+					let playerId2 = (match.p1 === playerId ? match.p2 : match.p1);
+					if (!playersToRefresh.includes(playerId2))
+					{
+						playersToRefresh.push(playerId2);
+					}
+				}
 			}
 		}
 
