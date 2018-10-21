@@ -766,14 +766,13 @@ export class SwissTournamentController
 			let matchPoints = (score ? score.matchPoints : 0);
 			let byesCount = (score ? score.byes : 0);
 			let matches = this.playerMatches(playerId);
-			let alreadyPlayedOpponents = matches.map(match => (match.state === MatchState.Validated ? (match.p1 === playerId ? match.p2 : match.p1) : null));
-			let potentialOpponents = playersToPair.filter(opponent => (playerId !== opponent.playerId && alreadyPlayedOpponents.indexOf(opponent.playerId) === -1));
+			let alreadyPlayedOpponents = matches.map(match => (match.state === MatchState.Validated ? (match.p1 === playerId ? match.p2 : match.p1) : null)).filter(playerId => playerId != null);
 			return {
 				"player": player,
 				"id": playerId,
 				"matchPoints": matchPoints,
 				"byeCount": byesCount,
-				"potentialOpponents": potentialOpponents,
+				"alreadyPlayedOpponents": alreadyPlayedOpponents,
 				"canBye": true
 			};
 		});
