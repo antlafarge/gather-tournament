@@ -777,15 +777,17 @@ export class SwissTournamentController
 			};
 		});
 		
-		if (playersToPair.length % 2 == 1)
+		let bye = (playersToPair.length % 2 === 1);
+
+		if (bye)
 		{
 			playersToPair.forEach(playerInfos => {
 				playerInfos.canBye = playersToPair.every(opponentInfos => {
-					let playerDropped = (opponentInfos.player.drop !== false);
+					let opponentDropped = (opponentInfos.player.drop !== false);
 					let hasMinByeCount = (opponentInfos.byeCount > playerInfos.byeCount);
 					let hasEqualByeCount = (opponentInfos.byeCount === playerInfos.byeCount);
 					let hasMinMatchPoints = (opponentInfos.matchPoints >= playerInfos.matchPoints);
-					return (playerDropped || hasMinByeCount || (hasEqualByeCount && hasMinMatchPoints));
+					return (opponentDropped || hasMinByeCount || (hasEqualByeCount && hasMinMatchPoints));
 				});
 			});
 		}
@@ -795,8 +797,6 @@ export class SwissTournamentController
 		playersToPair = playersToPair.sort((p1, p2) => (p2.matchPoints - p1.matchPoints) || (p1.player.tb4 - p2.player.tb4)); // Sort Match points DESC, Tie breaker 4 DESC
 
 		console.log("playersToPair", playersToPair);
-
-		let bye = (playersToPair.length % 2 === 1);
 
 		let result = {
 			"score": 0,
@@ -820,13 +820,12 @@ export class SwissTournamentController
 		{
 			let playersTiedToBye = playersToPair.filter(p => p.canBye === true).reverse();
 			let promises = [];
-			let maxThreads = ((navigator && navigator.hardwareConcurrency) ? navigator.hardwareConcurrency - 1 : 1);
 
 			let launchNext = {
-				"f": null
+				"exec": null
 			};
 
-			launchNext.f = () =>
+			launchNext.exec = () =>
 			{
 				let byePlayer = playersTiedToBye.shift();
 				playersTiedToBye.length = 0;
@@ -849,16 +848,18 @@ export class SwissTournamentController
 					{
 						data.byePlayer = byePlayer;
 						promise2Resolve(data);
-						launchNext.f();
+						launchNext.exec();
 					});
 	
 					promises.push(promise2);
 				}
 			}
+			
+			let maxThreads = ((navigator && navigator.hardwareConcurrency > 1) ? navigator.hardwareConcurrency - 1 : 1);
 
 			for (let i = 0; i < maxThreads; i++)
 			{
-				launchNext.f();
+				launchNext.exec();
 			}
 
 			pairingPromise = Promise.all(promises).then(results =>
