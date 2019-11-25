@@ -1,4 +1,4 @@
-import {Cookie} from './cookie.js'
+import { Save } from './save.js'
 
 export let MatchState =
 {
@@ -1109,14 +1109,14 @@ export class SwissTournamentController
 
 	save()
 	{
-		let players2 = this.serializePlayers();
-		let rounds2 = this.serializeRounds();
-
-		Cookie.saveData("players", players2);
-		Cookie.saveData("rounds", rounds2);
-		
 		console.log("save");
 
+		const players = this.serializePlayers();
+		const rounds = this.serializeRounds();
+
+		Save.save("players", players);
+		Save.save("rounds", rounds);
+		
 		console.log("players", this.players);
 		console.log("rounds", this.rounds);
 	}
@@ -1125,20 +1125,19 @@ export class SwissTournamentController
 	{
 		console.log("load");
 
-		let players = Cookie.loadData("players");
+		const players = Save.load("players");
 		if (players)
 		{
 			this.players = this.deserializePlayers(players);
 		}
 
-		console.log("Players", this.players);
-
-		let matches = Cookie.loadData("rounds");
+		let matches = Save.load("rounds");
 		if (matches)
 		{
 			this.rounds = this.deserializeRounds(matches);
 		}
 
+		console.log("Players", this.players);
 		console.log("Rounds", this.rounds);
 
 		this.selectedRound = this.currentRound();
