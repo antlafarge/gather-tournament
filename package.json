@@ -1,0 +1,23 @@
+{
+  "name": "gather-tournament",
+  "version": "1.0.0",
+  "description": "Online demo : https://antlafarge.github.io/gather-tournament",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/antlafarge/gather-tournament.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/antlafarge/gather-tournament/issues"
+  },
+  "homepage": "https://github.com/antlafarge/gather-tournament#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}
