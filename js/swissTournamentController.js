@@ -54,7 +54,7 @@ export class SwissTournamentController
         };
     }
 
-	createMatch(matchState, playerId, opponentId, playerScore, opponentScore, roundNotFinished)
+	createMatch(matchState, playerId, opponentId, playerScore, opponentScore, lastGameFinished)
     {
         return {
 			"state": (matchState || MatchState.Pending),
@@ -62,7 +62,7 @@ export class SwissTournamentController
             "p2": (opponentId >= 0 ? opponentId : -1),
             "score1": (playerScore || 0),
 			"score2": (opponentScore || 0),
-			"roundNotFinished": (roundNotFinished || 0)
+			"lastGameStarted": (lastGameStarted || 0)
         };
 	}
 
@@ -163,15 +163,15 @@ export class SwissTournamentController
 					match.score2 = Math.floor(Math.random() * (scoreMax2 + 1));
 					if (match.score1 === 0 && match.score2 === 0)
 					{
-						match.roundNotFinished = 1;
+						match.lastGameStarted = 1;
 					}
 					else if (match.score1 === scoreMax || match.score2 === scoreMax)
 					{
-						match.roundNotFinished = 0;
+						match.lastGameStarted = 0;
 					}
 					else
 					{
-						match.roundNotFinished = (Math.random() > 0.25 ? 1 : 0);
+						match.lastGameStarted = (Math.random() > 0.25 ? 1 : 0);
 					}
 					match.state = MatchState.Validated;
 					changed = true;
@@ -393,7 +393,7 @@ export class SwissTournamentController
 						{
 							let gamesWin = (match.p1 === playerId ? match.score1 : match.score2);
 							score.gamePoints += (3 * gamesWin);
-							gamesPlayed += (match.score1 + match.score2 + match.roundNotFinished);
+							gamesPlayed += (match.score1 + match.score2 + (match.lastGameStarted ? 1 : 0));
 							if (match.score1 === match.score2)
 							{
 								score.matchesDraw++;
@@ -1147,7 +1147,9 @@ export class SwissTournamentController
 
 	serializePlayers()
 	{
-		return this.players.map(p => p.name + this.sep1 + p.tb4 + (p.drop !== false ? (this.sep1 + p.drop) : '')).join(this.sep2);
+		return this.players.map(
+			p => p.name + this.sep1 + p.tb4 + (p.drop !== false ? (this.sep1 + p.drop) : '')
+		).join(this.sep2);
 	}
 
 	deserializePlayers(players)
@@ -1155,23 +1157,47 @@ export class SwissTournamentController
 		return players.split(this.sep2).map(p2 =>
 		{
 			let p = p2.split(this.sep1);
-			return this.createPlayer(p[0], p[1], (p[2] != null ? parseInt(p[2]) : false));
+			return this.createPlayer(
+				p[0],
+				p[1],
+				p[2] != null ? parseInt(p[2]) : false
+			);
 		});
 	}
 
 	serializeRounds()
 	{
-		return this.rounds.map(r => r.map(m => m.p1 + (m.state === MatchState.Bye ? '' : (this.sep1 + m.p2 + this.sep1 + m.score1 + this.sep1 + m.score2 + (m.roundNotFinished ? ('/1') : '')))).join(this.sep2)).join(this.sep3);
+		return this.rounds.map(
+			r =>r.map(
+				m => m.p1 + (
+					m.state === MatchState.Bye ? '' : (
+						this.sep1 + m.p2 + this.sep1 + m.score1 + this.sep1 + m.score2 + (
+							m.lastGameStarted ? (this.sep1 + 1) : ''
+						)
+					)
+				)
+			).join(this.sep2)
+		).join(this.sep3);
 	}
 
 	deserializeRounds(matches)
 	{
-		let rounds = matches.split(this.sep3).map(r => r.split(this.sep2).map(m2 =>
-		{
-			let m = m2.split(this.sep1);
-			return this.createMatch((m[1] ? MatchState.Validated : MatchState.Bye), parseInt(m[0]), parseInt(m[1]), parseInt(m[2]), parseInt(m[3]), (m[4] ? 1 : 0));
-		}));
-		return rounds;
+		return matches.split(this.sep3).map(
+			r => r.split(this.sep2).map(
+				m2 =>
+				{
+					let m = m2.split(this.sep1);
+					return this.createMatch(
+						m[1] ? MatchState.Validated : MatchState.Bye,
+						parseInt(m[0]),
+						parseInt(m[1]),
+						parseInt(m[2]),
+						parseInt(m[3]),
+						m[4] ? 1 : 0
+					);
+				}
+			)
+		);
 	}
 
 	export()

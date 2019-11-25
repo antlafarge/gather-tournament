@@ -8,7 +8,7 @@ let MatchState =
 function createMatch(playerId, opponentId)
 {
     let match = newObject();
-    match.roundNotFinished = 0;
+    match.lastGameStarted = 0;
     match.p1 = (playerId >= 0 ? playerId : -1);
     match.p2 = (opponentId >= 0 ? opponentId : -1);
     return match;

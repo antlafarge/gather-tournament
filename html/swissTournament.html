@@ -122,7 +122,7 @@
 							<th class="tc">Player</th>
 							<th class="tc">Score</th>
 							<th class="tc">Opponent</th>
-							<th class="tc">Round not finished</th>
+							<th class="tc">Last game started</th>
 							<th class="tc">Validation</th>
 						</tr>
 					</thead>
@@ -143,7 +143,7 @@
 							<td class="tc vam">
 								<div class="btn-group-toggle">
 									<label class="btn btn-1" ng-class="{'active':match.state !== ctrl.MatchState.Validated}">
-										<input type="checkbox" autocomplete="off" ng-model="match.roundNotFinished" ng-change="ctrl.updateScore(match)" ng-true-value="1" ng-false-value="0" ng-disabled="match.state === ctrl.MatchState.Validated"> {{match.roundNotFinished ? "Yes" : "No"}}
+										<input type="checkbox" autocomplete="off" ng-model="match.lastGameStarted" ng-change="ctrl.updateScore(match)" ng-true-value="1" ng-false-value="0" ng-disabled="match.state === ctrl.MatchState.Validated"> {{match.lastGameStarted ? "Yes" : "No"}}
 									</label>
 								</div>
 							</td>
