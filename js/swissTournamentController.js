@@ -54,7 +54,7 @@ export class SwissTournamentController
         };
     }
 
-	createMatch(matchState, playerId, opponentId, playerScore, opponentScore, lastGameFinished)
+	createMatch(matchState, playerId, opponentId, playerScore, opponentScore, lastGameStarted)
     {
         return {
 			"state": (matchState || MatchState.Pending),
