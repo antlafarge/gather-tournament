@@ -1,5 +1,3 @@
-import { Save } from './save.js'
-
 export let MatchState =
 {
 	Pending: 0,
@@ -56,7 +54,6 @@ export class SwissTournamentController
 
 	createMatch(matchState, playerId, opponentId, playerScore, opponentScore, lastGameStarted)
     {
-		console.log(typeof (matchState || MatchState.Pending), (matchState || MatchState.Pending))
         return {
 			"state": (matchState || MatchState.Pending),
             "p1": (playerId >= 0 ? playerId : -1),
@@ -139,17 +136,20 @@ export class SwissTournamentController
 	add100RandomPlayers()
 	{
 		console.log("add100RandomPlayers...");
+
 		for (let i = 0; i < 100; i++)
 		{
-			let playerName = "player_" + this.randChar() + this.randChar() + this.randChar() + this.randChar() + this.randChar() + this.randChar();
+			let playerName = this.randChar() + this.randChar() + this.randChar() + this.randChar() + this.randChar() + this.randChar() + this.randChar() + this.randChar();
 			this.addPlayer(playerName);
 		}
+
 		console.log("add100RandomPlayers OK");
 	}
 
 	fillRandomScores()
 	{
 		console.log("fillRandomScores...");
+
 		let round = this.rounds.length - 1;
 		if (round >= 0)
 		{
@@ -327,6 +327,7 @@ export class SwissTournamentController
 			{
 				return (p1.name.localeCompare(p2.name));
 			});
+			this.allScores = [];
 		}
 
 		// Recompute scores
@@ -541,7 +542,7 @@ export class SwissTournamentController
 			});
 		}
 
-		console.log("scores", this.allScores);
+		console.log("allScores", this.allScores);
 	}
 
 	playerMatches(playerId1, playerId2, roundIndexMax)
@@ -607,9 +608,27 @@ export class SwissTournamentController
 		return this.players.find(player => (player.name === playerName));
 	}
 
-	forDisplay(value)
+	intDisplay(value)
 	{
 		return (value ? value : "-");
+	}
+
+	floatDisplay(value)
+	{
+		return (value ? value : "-");
+	}
+
+	floatDisplayFixed(value)
+	{
+		if (value)
+		{
+			const valueFixed = value.toFixed(2);
+			return (value === valueFixed ? valueFixed : (valueFixed + '...'));
+		}
+		else
+		{
+			return '-';
+		}
 	}
 
 	currentRoundScoresEntered()
@@ -1115,8 +1134,8 @@ export class SwissTournamentController
 		const players = this.serializePlayers();
 		const rounds = this.serializeRounds();
 
-		Save.save("players", players);
-		Save.save("rounds", rounds);
+		window.localStorage.setItem("players", players);
+		window.localStorage.setItem("rounds", rounds);
 		
 		console.log("players", this.players);
 		console.log("rounds", this.rounds);
@@ -1126,20 +1145,20 @@ export class SwissTournamentController
 	{
 		console.log("load");
 
-		const players = Save.load("players");
+		const players = window.localStorage.getItem("players");
 		if (players)
 		{
 			this.players = this.deserializePlayers(players);
 		}
 
-		let matches = Save.load("rounds");
+		let matches = window.localStorage.getItem("rounds");
 		if (matches)
 		{
 			this.rounds = this.deserializeRounds(matches);
 		}
 
-		console.log("Players", this.players);
-		console.log("Rounds", this.rounds);
+		console.log("players", this.players);
+		console.log("rounds", this.rounds);
 
 		this.selectedRound = this.currentRound();
 
@@ -1227,7 +1246,7 @@ export class SwissTournamentController
 			return Promise.reject("Bad file format");
 		}
 
-		console.log("Import", file);
+		console.log("import", file);
 
 		return this.q((resolve, reject) => {
 			let reader = new FileReader();
@@ -1254,7 +1273,7 @@ export class SwissTournamentController
 		this.loadFile(files[0])
 			.then((data) =>
 		{
-				let json = JSON.parse(data);
+			let json = JSON.parse(data);
 			this.players = json.players;
 			this.rounds = json.rounds;
 			this.selectedRound = json.selectedRound;

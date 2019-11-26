@@ -40,9 +40,9 @@
 				<table class="table table-lg table-bordered table-striped table-hover" ng-if="ctrl.roundCount() === 0">
 					<thead class="thead-dark">
 						<tr>
-							<th class="text-center">#</th>
-							<th class="text-center">{{ctrl.players.length}} players</th>
-							<th class="text-center">Delete</th>
+							<th class="text-center align-middle">#</th>
+							<th class="text-center align-middle">{{ctrl.players.length}} players</th>
+							<th class="text-center align-middle">Delete</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -59,17 +59,17 @@
 				<table class="table table-lg table-bordered table-striped table-hover" ng-if="ctrl.roundCount() > 0">
 					<thead class="thead-dark">
 						<tr>
-							<th class="text-center">#</th>
-							<th class="text-center" colspan="2">{{ctrl.allScores[ctrl.selectedRound].length}} players</th>
-							<th class="text-center" title="Win (Bye)" ng-if="ctrl.roundCount() > 0">W</th>
-							<th class="text-center" title="Loose" ng-if="ctrl.roundCount() > 0">L</th>
-							<th class="text-center" title="Draw" ng-if="ctrl.roundCount() > 0">D</th>
-							<th class="text-center" title="Match Points" ng-if="ctrl.roundCount() > 0">MP</th>
-							<th class="text-center" title="Match Win %" ng-if="ctrl.roundCount() > 0">MW%</th>
-							<th class="text-center" title="Oppopent match win % (Tiebreaker 1)" ng-if="ctrl.roundCount() > 0">OMW%</th>
-							<th class="text-center" title="Game Points" ng-if="ctrl.roundCount() > 0">GP</th>
-							<th class="text-center" title="Game Win % (Tiebreaker 2)" ng-if="ctrl.roundCount() > 0">GW%</th>
-							<th class="text-center" title="Oppopent Game Win % (Tiebreaker 3)" ng-if="ctrl.roundCount() > 0">OGW%</th>
+							<th class="text-center align-middle">#</th>
+							<th class="text-center align-middle" colspan="2">{{ctrl.allScores[ctrl.selectedRound].length}} players</th>
+							<th class="text-center align-middle" title="Win (Bye)" ng-if="ctrl.roundCount() > 0">W</th>
+							<th class="text-center align-middle" title="Loose" ng-if="ctrl.roundCount() > 0">L</th>
+							<th class="text-center align-middle" title="Draw" ng-if="ctrl.roundCount() > 0">D</th>
+							<th class="text-center align-middle" title="Match Points" ng-if="ctrl.roundCount() > 0">MP</th>
+							<th class="text-center align-middle" title="Match Win %" ng-if="ctrl.roundCount() > 0">MW%</th>
+							<th class="text-center align-middle" title="Oppopent match win % (Tiebreaker 1)" ng-if="ctrl.roundCount() > 0">OMW%</th>
+							<th class="text-center align-middle" title="Game Points" ng-if="ctrl.roundCount() > 0">GP</th>
+							<th class="text-center align-middle" title="Game Win % (Tiebreaker 2)" ng-if="ctrl.roundCount() > 0">GW%</th>
+							<th class="text-center align-middle" title="Oppopent Game Win % (Tiebreaker 3)" ng-if="ctrl.roundCount() > 0">OGW%</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -89,15 +89,15 @@
 								<span ng-show="ctrl.playerDropped(score.playerId) && !ctrl.canUndrop(score.playerId)" title="dropped after round {{score.player.drop + 1}}">dropped</span>
 							</td>
 							<td class="text-center align-middle" ng-if="ctrl.roundCount() == 0"><button type="button" class="btn btn-sm btn-danger" ng-click="ctrl.removePlayer(score.player)">Delete</button></td>
-							<td class="text-center align-middle" ng-if="ctrl.roundCount() > 0">{{ctrl.forDisplay(score.matchesWin)}} <small>{{score.byes > 0 ? "B" : ""}}</small></span></td>
-							<td class="text-center align-middle" ng-if="ctrl.roundCount() > 0">{{ctrl.forDisplay(score.matchesLoose)}}</td>
-							<td class="text-center align-middle" ng-if="ctrl.roundCount() > 0">{{ctrl.forDisplay(score.matchesDraw)}}</td>
+							<td class="text-center align-middle" ng-if="ctrl.roundCount() > 0">{{ctrl.intDisplay(score.matchesWin)}} <small>{{score.byes > 0 ? "B" : ""}}</small></span></td>
+							<td class="text-center align-middle" ng-if="ctrl.roundCount() > 0">{{ctrl.intDisplay(score.matchesLoose)}}</td>
+							<td class="text-center align-middle" ng-if="ctrl.roundCount() > 0">{{ctrl.intDisplay(score.matchesDraw)}}</td>
 							<th class="text-center align-middle" ng-if="ctrl.roundCount() > 0"><span style="font-size:120%">{{score.matchPoints}}</span></th>
-							<td class="text-center align-middle" ng-if="ctrl.roundCount() > 0">{{ctrl.forDisplay(score.matchWinPercent.toFixed(3))}}</td>
-							<th class="text-center align-middle" ng-if="ctrl.roundCount() > 0">{{ctrl.forDisplay(score.opponentMatchWinPercent.toFixed(3))}}</th>
-							<td class="text-center align-middle" ng-if="ctrl.roundCount() > 0">{{score.gamePoints}}</td>
-							<th class="text-center align-middle" ng-if="ctrl.roundCount() > 0">{{ctrl.forDisplay(score.gameWinPercent.toFixed(3))}}</th>
-							<th class="text-center align-middle" ng-if="ctrl.roundCount() > 0">{{ctrl.forDisplay(score.opponentGameWinPercent.toFixed(3))}}</th>
+							<td class="text-center align-middle" ng-if="ctrl.roundCount() > 0" ng-attr-title="{{ctrl.floatDisplay(score.matchWinPercent)}}">{{ctrl.floatDisplayFixed(score.matchWinPercent)}}</td>
+							<th class="text-center align-middle" ng-if="ctrl.roundCount() > 0" ng-attr-title="{{ctrl.floatDisplay(score.opponentMatchWinPercent)}}">{{ctrl.floatDisplayFixed(score.opponentMatchWinPercent)}}</th>
+							<td class="text-center align-middle" ng-if="ctrl.roundCount() > 0">{{ctrl.intDisplay(score.gamePoints)}}</td>
+							<th class="text-center align-middle" ng-if="ctrl.roundCount() > 0" ng-attr-title="{{ctrl.floatDisplay(score.gameWinPercent)}}">{{ctrl.floatDisplayFixed(score.gameWinPercent)}}</th>
+							<th class="text-center align-middle" ng-if="ctrl.roundCount() > 0" ng-attr-title="{{ctrl.floatDisplay(score.opponentGameWinPercent)}}">{{ctrl.floatDisplayFixed(score.opponentGameWinPercent)}}</th>
 						</tr>
 					</tbody>
 				</table>
@@ -122,12 +122,12 @@
 				<table class="table table-sm table-bordered table-striped">
 					<thead class="thead-dark">
 						<tr>
-							<th class="text-center">#</th>
-							<th class="text-center">Player</th>
-							<th class="text-center">Score</th>
-							<th class="text-center">Opponent</th>
-							<th class="text-center">Last game started</th>
-							<th class="text-center">Finished</th>
+							<th class="text-center align-middle">#</th>
+							<th class="text-center align-middle">Player</th>
+							<th class="text-center align-middle">Score</th>
+							<th class="text-center align-middle">Opponent</th>
+							<th class="text-center align-middle">Last game started</th>
+							<th class="text-center align-middle">Finished</th>
 						</tr>
 					</thead>
 					<tbody id="matches">
