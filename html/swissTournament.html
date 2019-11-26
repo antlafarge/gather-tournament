@@ -145,18 +145,12 @@
 							</td>
 							<th class="text-center align-middle">{{ctrl.players[match.p2].name}}</th>
 							<td class="text-center align-middle">
-								<div class="btn-group-toggle" data-toggle="buttons">
-									<label class="btn btn-dark" ng-class="{'disabled':match.state === ctrl.MatchState.Validated}">
-										<input type="checkbox" autocomplete="off" ng-model="match.lastGameStarted" ng-change="ctrl.updateScore(match)" ng-true-value="1" ng-false-value="0" ng-disabled="match.state === ctrl.MatchState.Validated"> {{match.lastGameStarted ? "Yes" : "No"}}
-									</label>
-								</div>
+								<button class="btn btn-dark" ng-show="match.lastGameStarted === 1" ng-disabled="match.state === ctrl.MatchState.Validated" ng-click="match.lastGameStarted = 0; ctrl.updateScore(match);">Yes</button>
+								<button class="btn btn-dark" ng-show="match.lastGameStarted === 0" ng-disabled="match.state === ctrl.MatchState.Validated" ng-click="match.lastGameStarted = 1; ctrl.updateScore(match);">No</button>
 							</td>
 							<td class="text-center align-middle">
-								<div class="btn-group-toggle" data-toggle="buttons" ng-show="ctrl.isCurrentRound()">
-									<label class="btn btn-dark">
-										<input type="checkbox" autocomplete="off" ng-model="match.state" ng-change="ctrl.updateScore(match)" ng-true-value="1" ng-false-value="0" ng-disabled="!ctrl.isCurrentRound()"> {{match.state === ctrl.MatchState.Validated ? "Yes" : "No"}}
-									</label>
-								</div>
+								<button class="btn btn-dark" ng-show="ctrl.isCurrentRound() && match.state === ctrl.MatchState.Validated" ng-disabled="!ctrl.isCurrentRound()" ng-click="match.state = ctrl.MatchState.Pending; ctrl.updateScore(match);">Yes</button>
+								<button class="btn btn-dark" ng-show="ctrl.isCurrentRound() && match.state === ctrl.MatchState.Pending" ng-disabled="!ctrl.isCurrentRound()" ng-click="match.state = ctrl.MatchState.Validated; ctrl.updateScore(match);">No</button>
 							</td>
 						</tr>
 						<tr ng-repeat="match in ctrl.rounds[ctrl.selectedRound]" ng-if="match.state === ctrl.MatchState.Bye">

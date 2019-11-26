@@ -56,6 +56,7 @@ export class SwissTournamentController
 
 	createMatch(matchState, playerId, opponentId, playerScore, opponentScore, lastGameStarted)
     {
+		console.log(typeof (matchState || MatchState.Pending), (matchState || MatchState.Pending))
         return {
 			"state": (matchState || MatchState.Pending),
             "p1": (playerId >= 0 ? playerId : -1),
@@ -1188,16 +1189,14 @@ export class SwissTournamentController
 			(r, ri) => r.split(this.sep2).map(
 				(m2, mi) =>
 				{
-					let m = m2.split(this.sep1);
-					console.log(ri === rmax && (m[2] > 0 || m[3] > 0 || m[4] > 0))
-					return this.createMatch(
-						m[1] ? ((ri === rmax && (m[2] > 0 || m[3] > 0 || m[4] > 0)) ? MatchState.Validated : MatchState.Pending) : MatchState.Bye,
-						parseInt(m[0]),
-						parseInt(m[1]),
-						parseInt(m[2]),
-						parseInt(m[3]),
-						m[4] ? 1 : 0
-					);
+					const m = m2.split(this.sep1);
+					const playerId = parseInt(m[0]);
+					const opponentId = parseInt(m[1]);
+					const playerScore = parseInt(m[2]);
+					const opponentScore = parseInt(m[3]);
+					const lastGameStarted = parseInt(m[4]);
+					const state = opponentId >= 0 ? ((ri != rmax || playerScore || opponentScore || lastGameStarted) ? MatchState.Validated : MatchState.Pending) : MatchState.Bye;
+					return this.createMatch(state, playerId, opponentId, playerScore, opponentScore, lastGameStarted);
 				}
 			)
 		);
