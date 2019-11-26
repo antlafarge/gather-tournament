@@ -1180,15 +1180,18 @@ export class SwissTournamentController
 		).join(this.sep3);
 	}
 
-	deserializeRounds(matches)
+	deserializeRounds(data)
 	{
-		return matches.split(this.sep3).map(
-			r => r.split(this.sep2).map(
-				m2 =>
+		const rounds = data.split(this.sep3);
+		const rmax = rounds.length - 1;
+		return rounds.map(
+			(r, ri) => r.split(this.sep2).map(
+				(m2, mi) =>
 				{
 					let m = m2.split(this.sep1);
+					console.log(ri === rmax && (m[2] > 0 || m[3] > 0 || m[4] > 0))
 					return this.createMatch(
-						m[1] ? MatchState.Validated : MatchState.Bye,
+						m[1] ? ((ri === rmax && (m[2] > 0 || m[3] > 0 || m[4] > 0)) ? MatchState.Validated : MatchState.Pending) : MatchState.Bye,
 						parseInt(m[0]),
 						parseInt(m[1]),
 						parseInt(m[2]),
