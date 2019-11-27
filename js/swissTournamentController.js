@@ -375,10 +375,10 @@ export class SwissTournamentController
 				score.byes = 0;
 				score.matchPoints = 0;
 				score.matchWinPercent = 0;
-				score.opponentMatchWinPercent = 0;
+				score.opponentMatchWinPercent = this.oneOnThree;
 				score.gamePoints = 0;
 				score.gameWinPercent = 0;
-				score.opponentGameWinPercent = 0;
+				score.opponentGameWinPercent = this.oneOnThree;
 
 				score.matches = this.playerMatches(playerId, -1, round); // field deleted in second pass
 
@@ -475,8 +475,8 @@ export class SwissTournamentController
 							if (opponentScore)
 							{
 								opponentCount++;
-								matchWinCount += opponentScore.matchWinPercent;
-								gameWinCount += opponentScore.gameWinPercent;
+								matchWinCount += Math.max(opponentScore.matchWinPercent, this.oneOnThree);
+								gameWinCount += Math.max(opponentScore.gameWinPercent, this.oneOnThree);
 							}
 						}
 					}
@@ -526,7 +526,7 @@ export class SwissTournamentController
 				}
 
 				// random sort DESC
-				return (Math.random() > 0.5 ? 1 : -1);
+				return (Math.random() < 0.5 ? -1 : 1);
 			});
 		}
 
@@ -602,6 +602,11 @@ export class SwissTournamentController
 	intDisplay(value)
 	{
 		return (value >= 0 ? value : '-');
+	}
+
+	intDisplayNoZero(value)
+	{
+		return (value ? value : '-');
 	}
 
 	floatDisplay(value)
