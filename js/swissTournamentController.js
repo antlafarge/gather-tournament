@@ -426,10 +426,6 @@ export class SwissTournamentController
 				{
 					score.matchWinPercent = score.matchPoints / (3 * roundsPlayed);
 				}
-				if (score.matchWinPercent < this.oneOnThree)
-				{
-					score.matchWinPercent = this.oneOnThree;
-				}
 				
 				if (gamesPlayed > 0)
 				{
