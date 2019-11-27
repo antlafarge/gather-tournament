@@ -65,11 +65,11 @@
 							<th class="text-center align-middle" title="Loose" ng-if="ctrl.roundCount() > 0">L</th>
 							<th class="text-center align-middle" title="Draw" ng-if="ctrl.roundCount() > 0">D</th>
 							<th class="text-center align-middle" title="Match Points" ng-if="ctrl.roundCount() > 0">MP</th>
-							<th class="text-center align-middle" title="Match Win %" ng-if="ctrl.roundCount() > 0">MW%</th>
-							<th class="text-center align-middle" title="Oppopent match win % (Tiebreaker 1)" ng-if="ctrl.roundCount() > 0">OMW%</th>
+							<th class="text-center align-middle" title="Match-win %" ng-if="ctrl.roundCount() > 0">MW%</th>
+							<th class="text-center align-middle" title="Opponents' match-win % (Tiebreaker 1)" ng-if="ctrl.roundCount() > 0">OMW%</th>
 							<th class="text-center align-middle" title="Game Points" ng-if="ctrl.roundCount() > 0">GP</th>
-							<th class="text-center align-middle" title="Game Win % (Tiebreaker 2)" ng-if="ctrl.roundCount() > 0">GW%</th>
-							<th class="text-center align-middle" title="Oppopent Game Win % (Tiebreaker 3)" ng-if="ctrl.roundCount() > 0">OGW%</th>
+							<th class="text-center align-middle" title="Game-win % (Tiebreaker 2)" ng-if="ctrl.roundCount() > 0">GW%</th>
+							<th class="text-center align-middle" title="Opponents' game-win % (Tiebreaker 3)" ng-if="ctrl.roundCount() > 0">OGW%</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -89,7 +89,7 @@
 								<span ng-show="ctrl.playerDropped(score.playerId) && !ctrl.canUndrop(score.playerId)" title="dropped after round {{score.player.drop + 1}}">dropped</span>
 							</td>
 							<td class="text-center align-middle" ng-if="ctrl.roundCount() == 0"><button type="button" class="btn btn-sm btn-danger" ng-click="ctrl.removePlayer(score.player)">Delete</button></td>
-							<td class="text-center align-middle" ng-if="ctrl.roundCount() > 0">{{ctrl.intDisplay(score.matchesWin)}} <small>{{score.byes > 0 ? "B" : ""}}</small></span></td>
+							<td class="text-center align-middle" ng-if="ctrl.roundCount() > 0">{{ctrl.intDisplay(score.matchesWin)}}<small>{{score.byes > 0 ? "B" : ""}}</small></span></td>
 							<td class="text-center align-middle" ng-if="ctrl.roundCount() > 0">{{ctrl.intDisplay(score.matchesLoose)}}</td>
 							<td class="text-center align-middle" ng-if="ctrl.roundCount() > 0">{{ctrl.intDisplay(score.matchesDraw)}}</td>
 							<th class="text-center align-middle" ng-if="ctrl.roundCount() > 0"><span style="font-size:120%">{{score.matchPoints}}</span></th>

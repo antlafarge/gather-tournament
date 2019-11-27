@@ -559,15 +559,18 @@ export class SwissTournamentController
 
 		roundIndexMax = (roundIndexMax >= 0 ? roundIndexMax : +Infinity);
 
-		let filteredRounds = this.rounds.map((round, index) =>
+		return this.rounds.reduce((acc, round, currentIndex, array) =>
 		{
-			if (index <= roundIndexMax)
+			if (currentIndex <= roundIndexMax)
 			{
-				return round.filter(match => (((match.p1 === playerId1 && (playerId2 === -1 || match.p2 == playerId2)) || (match.p2 == playerId1 && (playerId2 === -1 || match.p1 == playerId2)))));
+				const match = round.find(match => (((match.p1 === playerId1 && (playerId2 === -1 || match.p2 == playerId2)) || (match.p2 == playerId1 && (playerId2 === -1 || match.p1 == playerId2)))));
+				if (match)
+				{
+					acc.push(match);
+				}
 			}
-			return [];
-		});
-		return Array.prototype.concat.apply([], filteredRounds);
+			return acc;
+		}, []);
 	}
 
 	playerMatchesWinDiff(playerId1, playerId2, roundIndexMax)
@@ -615,15 +618,16 @@ export class SwissTournamentController
 
 	floatDisplay(value)
 	{
-		return (value ? value : "-");
+		return (value ? (value * 100) : "-");
 	}
 
 	floatDisplayFixed(value)
 	{
 		if (value)
 		{
+			value *= 100;
 			const valueFixed = value.toFixed(2);
-			return (value === valueFixed ? valueFixed : (valueFixed + '...'));
+			return (value == valueFixed ? (value) : valueFixed);
 		}
 		else
 		{
