@@ -2,7 +2,7 @@
 	<table class="table table-lg">
 		<tr>
 			<!-- Menus -->
-			<td class="tl">
+			<td class="text-left">
 				<div class="dropdown">
 					<button class="btn btn-lg btn-primary dropdown-toggle" id="ActionsDropdownButton" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 						Actions
@@ -23,7 +23,7 @@
 				</div>
 			</td>
 			<!-- Rounds -->
-			<td class="tl" ng-show="ctrl.roundMaxCount() > 0">
+			<td class="text-left" ng-show="ctrl.roundMaxCount() > 0">
 				<div class="btn-group" role="group" aria-label="rounds">
 					<button type="button" class="btn btn-lg btn-outline-dark" disabled>Round</button>
 					<button type="button" class="btn btn-lg" ng-repeat="i in ctrl.roundMaxCountRange()" ng-click="ctrl.selectRound($index)" ng-class="{'active':(ctrl.roundCount() > 0 && ctrl.selectedRound == $index), 'btn-outline-primary':$index < ctrl.roundCount(), 'btn-outline-dark': $index >= ctrl.roundCount()}" ng-disabled="$index >= ctrl.roundCount()">{{$index + 1}}</button>
@@ -75,7 +75,7 @@
 					<tbody>
 						<tr style="cursor:pointer" ng-repeat="(playerIndex, score) in ctrl.allScores[ctrl.selectedRound]" ng-click="ctrl.toggleSelectPlayer(score.playerId)" ng-class="{'bg-info':(ctrl.selectedPlayerId == score.playerId), 'bg-success':(ctrl.playerMatchesWinDiff(ctrl.selectedPlayerId, score.playerId, ctrl.selectedRound) > 0), 'bg-danger':(ctrl.playerMatchesWinDiff(ctrl.selectedPlayerId, score.playerId, ctrl.selectedRound) < 0), 'bg-warning':(ctrl.playerMatchesWinDiff(ctrl.selectedPlayerId, score.playerId, ctrl.selectedRound) === 0)}">
 							<td class="text-center align-middle">{{playerIndex + 1}}</td>
-							<th class="tl">
+							<th class="text-left">
 								<span ng-if="ctrl.isLastRound() && ctrl.currentRoundScoresEntered()">
 									<span ng-show="playerIndex === 0">&#x1F947</span>
 									<span ng-show="playerIndex === 1">&#x1F948</span>
