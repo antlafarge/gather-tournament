@@ -435,10 +435,6 @@ export class SwissTournamentController
 				{
 					score.gameWinPercent = score.gamePoints / (3 * gamesPlayed);
 				}
-				if (score.gameWinPercent < this.oneOnThree)
-				{
-					score.gameWinPercent = this.oneOnThree;
-				}
 			}
 
 			// Second pass to compute opponent game and match win percentage
@@ -490,14 +486,6 @@ export class SwissTournamentController
 				{
 					score.opponentMatchWinPercent = matchWinCount / opponentCount;
 					score.opponentGameWinPercent = gameWinCount / opponentCount;
-				}
-				if (score.opponentMatchWinPercent < this.oneOnThree)
-				{
-					score.opponentMatchWinPercent = this.oneOnThree;
-				}
-				if (score.opponentGameWinPercent < this.oneOnThree)
-				{
-					score.opponentGameWinPercent = this.oneOnThree;
 				}
 
 				delete score.matches;
@@ -613,17 +601,17 @@ export class SwissTournamentController
 
 	intDisplay(value)
 	{
-		return (value ? value : "-");
+		return (value >= 0 ? value : '-');
 	}
 
 	floatDisplay(value)
 	{
-		return (value ? (value * 100) : "-");
+		return (value >= 0 ? (value * 100) : '');
 	}
 
 	floatDisplayFixed(value)
 	{
-		if (value)
+		if (value >= 0)
 		{
 			value *= 100;
 			const valueFixed = value.toFixed(2);
@@ -631,7 +619,7 @@ export class SwissTournamentController
 		}
 		else
 		{
-			return '-';
+			return '';
 		}
 	}
 
