@@ -375,10 +375,10 @@ export class SwissTournamentController
 				score.byes = 0;
 				score.matchPoints = 0;
 				score.matchWinPercent = 0;
-				score.opponentMatchWinPercent = this.oneOnThree;
+				score.opponentMatchWinPercent = 1;
 				score.gamePoints = 0;
 				score.gameWinPercent = 0;
-				score.opponentGameWinPercent = this.oneOnThree;
+				score.opponentGameWinPercent = 1;
 
 				score.matches = this.playerMatches(playerId, -1, round); // field deleted in second pass
 
