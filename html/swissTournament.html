@@ -34,7 +34,7 @@
 </header>
 <main>
 	<div class="container-fluid" style="padding-left:0;padding-right:0;">
-		<div class="row">
+		<div class="row" style="margin-left:0;margin-right:0;">
 			<div class="col" style="padding-left:0;padding-right:0;">
 				<!-- Players list -->
 				<table class="table table-lg table-bordered table-striped table-hover" ng-if="ctrl.roundCount() === 0">
@@ -103,7 +103,7 @@
 				</table>
 			</div>
 		</div>
-		<div class="row" ng-show="ctrl.roundCount() == 0">
+		<div class="row" style="margin-left:0;margin-right:0;" ng-show="ctrl.roundCount() == 0">
 			<!-- Add new player -->
 			<div class="col text-center" style="padding-left:0;padding-right:0;">
 				<p>
@@ -116,7 +116,7 @@
 				</p>
 			</div>
 		</div>
-		<div class="row" ng-show="ctrl.roundCount() > 0">
+		<div class="row" style="margin-left:0;margin-right:0;" ng-show="ctrl.roundCount() > 0">
 			<div class="col" style="padding-left:0;padding-right:0;">
 				<!-- Add new player -->
 				<table class="table table-sm table-bordered table-striped">
