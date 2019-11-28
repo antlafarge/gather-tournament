@@ -76,17 +76,13 @@
 						<tr style="cursor:pointer" ng-repeat="(playerIndex, score) in ctrl.allScores[ctrl.selectedRound]" ng-click="ctrl.toggleSelectPlayer(score.playerId)" ng-class="{'bg-info':(ctrl.selectedPlayerId == score.playerId), 'bg-success':(ctrl.playerMatchesWinDiff(ctrl.selectedPlayerId, score.playerId, ctrl.selectedRound) > 0), 'bg-danger':(ctrl.playerMatchesWinDiff(ctrl.selectedPlayerId, score.playerId, ctrl.selectedRound) < 0), 'bg-warning':(ctrl.playerMatchesWinDiff(ctrl.selectedPlayerId, score.playerId, ctrl.selectedRound) === 0)}">
 							<td class="text-center align-middle">{{playerIndex + 1}}</td>
 							<th class="text-left">
-								<span ng-if="ctrl.isLastRound() && ctrl.currentRoundScoresEntered()">
-									<span ng-show="playerIndex === 0">&#x1F947</span>
-									<span ng-show="playerIndex === 1">&#x1F948</span>
-									<span ng-show="playerIndex === 2">&#x1F949</span>
-								</span>
 								{{score.player.name}}
 							</th>
 							<td>
 								<button class="btn btn-sm btn-dark" ng-show="ctrl.canDrop(score.playerId)" ng-click="ctrl.toggleDropPlayer(score.playerId); $event.stopPropagation();">Drop</button>
 								<button class="btn btn-sm btn-danger" ng-show="ctrl.canUndrop(score.playerId)" ng-click="ctrl.toggleDropPlayer(score.playerId); $event.stopPropagation();">Undrop</button>
 								<span ng-show="ctrl.playerDropped(score.playerId) && !ctrl.canUndrop(score.playerId)" title="dropped after round {{score.player.drop + 1}}">dropped</span>
+								<span ng-show="ctrl.showIsPending(score.playerId)">Pending...</span>
 							</td>
 							<td class="text-center align-middle" ng-if="ctrl.roundCount() == 0"><button type="button" class="btn btn-sm btn-danger" ng-click="ctrl.removePlayer(score.player)">Delete</button></td>
 							<td class="text-center align-middle" ng-if="ctrl.roundCount() > 0">{{ctrl.intDisplayNoZero(score.matchesWin)}}<small>{{score.byes > 0 ? "B" : ""}}</small></span></td>
@@ -127,7 +123,7 @@
 							<th class="text-center align-middle">Score</th>
 							<th class="text-center align-middle">Opponent</th>
 							<th class="text-center align-middle">Last game started</th>
-							<th class="text-center align-middle">Finished</th>
+							<th class="text-center align-middle">Validation</th>
 						</tr>
 					</thead>
 					<tbody id="matches">

@@ -1,4 +1,4 @@
-export let MatchState =
+export const MatchState =
 {
 	Pending: 0,
 	Validated: 1,
@@ -64,13 +64,40 @@ export class SwissTournamentController
         };
 	}
 
+	findCurrentMatch(playerId)
+	{
+		const currentRound = this.currentRound();
+		if (currentRound >= 0)
+		{
+			const round = this.rounds[currentRound];
+			if (round)
+			{
+				return round.find(match => match.p1 === playerId || match.p2 === playerId);
+			}
+		}
+		return null;
+	}
+
+	showIsPending(playerId)
+	{
+		if (this.isCurrentRound())
+		{
+			const match = this.findCurrentMatch(playerId);
+			if (match && match.state === MatchState.Pending)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
 	canDrop(playerId)
 	{
 		let player = this.players[playerId];
 
 		if (player == null)
 		{
-			throw "Can't find player";
+			throw Error("Can't find player");
 		}
 
 		if (player.drop !== false || this.roundCount() === 0 || this.roundCount() === this.roundMaxCount() || this.selectedRound != this.currentRound())
@@ -78,16 +105,16 @@ export class SwissTournamentController
 			return false;
 		}
 
-		let lastMatch = this.playerMatches(playerId).pop();
-
-		if (lastMatch && lastMatch.state !== MatchState.Pending)
+		if (this.currentRound() >= 0 && this.isCurrentRound())
 		{
-			return true;
+			const match = this.findCurrentMatch(playerId);
+			if (match)
+			{
+				return match.state !== MatchState.Pending;
+			}
 		}
-		else
-		{
-			return false;
-		}
+		
+		return false;
 	}
 	
 	canUndrop(playerId)
@@ -96,7 +123,7 @@ export class SwissTournamentController
 
 		if (player == null)
 		{
-			throw "Can't find player";
+			throw Error("Can't find player");
 		}
 
 		if (player.drop !== this.currentRound() || this.roundCount() === 0 || this.roundCount() === this.roundMaxCount() || this.selectedRound != this.currentRound())
@@ -104,16 +131,16 @@ export class SwissTournamentController
 			return false;
 		}
 
-		let lastMatch = this.playerMatches(playerId).pop();
-
-		if (lastMatch && lastMatch.state !== MatchState.Pending)
+		if (this.currentRound() >= 0 && this.isCurrentRound())
 		{
-			return true;
+			const match = this.findCurrentMatch(playerId);
+			if (match)
+			{
+				return match.state !== MatchState.Pending;
+			}
 		}
-		else
-		{
-			return false;
-		}
+		
+		return false;
 	}
 	
 	playerDropped(playerId)
@@ -122,7 +149,7 @@ export class SwissTournamentController
 
 		if (player == null)
 		{
-			throw "Can't find player";
+			throw Error("Can't find player");
 		}
 
 		return (player.drop !== false) && (player.drop <= this.selectedRound);
@@ -150,7 +177,7 @@ export class SwissTournamentController
 	{
 		console.log("fillRandomScores...");
 
-		let round = this.rounds.length - 1;
+		let round = this.currentRound();
 		if (round >= 0)
 		{
 			let changed = false;
@@ -181,7 +208,7 @@ export class SwissTournamentController
 
 			if (changed)
 			{
-				this.refreshScores(false, null, [this.currentRound()]);
+				this.refreshScores(null, [this.currentRound()]);
 				this.save();
 			}
 
@@ -195,7 +222,7 @@ export class SwissTournamentController
 
 		if (player == null)
 		{
-			throw "Can't find player";
+			throw Error("Can't find player");
 		}
 
 		let round = this.currentRound();
@@ -318,12 +345,14 @@ export class SwissTournamentController
 		return i;
 	}
 
-	refreshScores(refreshAll, playersToRefresh, roundsToRefresh)
+	refreshScores(playersToRefresh, roundsToRefresh)
 	{
+		const refreshAll = (!playersToRefresh || playersToRefresh.length === 0) && (!roundsToRefresh || roundsToRefresh.length === 0);
+
 		// Sort player list
 		if (refreshAll || this.sortedPlayers.length === 0 || this.roundCount() === 0)
 		{
-			this.sortedPlayers = this.players.map(p => p).sort((p1, p2) =>
+			this.sortedPlayers = [...this.players].sort((p1, p2) =>
 			{
 				return (p1.name.localeCompare(p2.name));
 			});
@@ -615,19 +644,7 @@ export class SwissTournamentController
 	currentRoundScoresEntered()
 	{
 		let currentRound = this.currentRound();
-
-		if (currentRound < 0)
-		{
-			return false;
-		}
-
-		let oneMatchNotValidated = this.rounds[currentRound].some(match => match.state === MatchState.Pending);
-		if (oneMatchNotValidated)
-		{
-			return false;
-		}
-
-		return true;
+		return (currentRound >= 0 && this.rounds[currentRound].every(match => match.state !== MatchState.Pending));
 	}
 
 	canCreateNewRound()
@@ -925,7 +942,7 @@ export class SwissTournamentController
 
 			this.generateTiebreaker4();
 
-			this.refreshScores(false, null, [this.currentRound()]);
+			this.refreshScores(null, [this.currentRound()]);
 
 			this.save();
 
@@ -988,7 +1005,7 @@ export class SwissTournamentController
 			this.selectedRound = Math.max(0, currentRound);
 		}
 		
-		this.refreshScores(false, null, [this.currentRound() + 1]);
+		this.refreshScores(null, [this.currentRound() + 1]);
 
 		this.save();
 	}
@@ -1029,7 +1046,7 @@ export class SwissTournamentController
 			}
 		}
 
-		this.refreshScores(false, playersToRefresh, [this.currentRound()]);
+		this.refreshScores(playersToRefresh, [this.currentRound()]);
 
 		this.save();
 	}
@@ -1046,7 +1063,7 @@ export class SwissTournamentController
 		this.selectedRound = 0;
 		this.selectedPlayerId = null;
 
-		this.refreshScores(true);
+		this.refreshScores();
 
 		this.save();
 	}
@@ -1081,7 +1098,7 @@ export class SwissTournamentController
 
 		this.players.push(this.createPlayer(playerName));
 		
-		this.refreshScores(true);
+		this.refreshScores();
 
 		this.save();
 	}
@@ -1110,7 +1127,7 @@ export class SwissTournamentController
 			this.players.splice(idx, 1);
 		}
 
-		this.refreshScores(true);
+		this.refreshScores();
 		
 		this.save();
 	}
@@ -1150,7 +1167,7 @@ export class SwissTournamentController
 
 		this.selectedRound = this.currentRound();
 
-		this.refreshScores(true);
+		this.refreshScores();
 	}
 
 	serializePlayers()
@@ -1255,7 +1272,7 @@ export class SwissTournamentController
 
 		if (files.length > 1)
 		{
-			throw "Select one file";
+			throw Error("Select one file");
 		}
 
 		this.loadFile(files[0])
@@ -1265,7 +1282,7 @@ export class SwissTournamentController
 			this.players = json.players;
 			this.rounds = json.rounds;
 			this.selectedRound = json.selectedRound;
-			this.refreshScores(true);
+			this.refreshScores();
 			this.save();
 		})
 			.catch((reason) =>
