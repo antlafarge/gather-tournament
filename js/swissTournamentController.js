@@ -339,7 +339,7 @@ export class SwissTournamentController
 
 		for (let round = 0; round < this.allScores.length; round++)
 		{
-			if (!refreshAll && roundsToRefresh && roundsToRefresh.indexOf(round) === -1)
+			if (!refreshAll && roundsToRefresh && !roundsToRefresh.includes(round))
 			{
 				continue;
 			}
@@ -362,7 +362,7 @@ export class SwissTournamentController
 
 			for (let playerId = 0; playerId < this.players.length; playerId++)
 			{
-				if (!refreshAll && playersToRefresh && playersToRefresh.indexOf(playerId) === -1)
+				if (!refreshAll && playersToRefresh && !playersToRefresh.includes(playerId))
 				{
 					continue;
 				}
@@ -433,29 +433,17 @@ export class SwissTournamentController
 				}
 			}
 
-			// Second pass to compute opponent game and match win percentage
+			// Second pass to compute opponent match and game win percentage
 			
 			for (let playerId = 0; playerId < this.players.length; playerId++)
 			{
-				let score;
-
-				if (!refreshAll && playersToRefresh && playersToRefresh.length > 0)
+				if (!refreshAll && playersToRefresh && !playersToRefresh.includes(playerId))
 				{
-					if (playersToRefresh.indexOf(playerId) !== -1)
-					{
-						score = scores.find(s => s.playerId === playerId);
-					}
-					else
-					{
-						continue;
-					}
+					continue;
 				}
 
-				if (!score)
-				{
-					score = scores[playerId];
-				}
-				
+				let score = scores.find(s => s.playerId === playerId);
+
 				let opponentCount = 0;
 				let matchWinCount = 0;
 				let gameWinCount = 0;
@@ -779,7 +767,14 @@ export class SwissTournamentController
 			let matchPoints = (score ? score.matchPoints : 0);
 			let byesCount = (score ? score.byes : 0);
 			let matches = this.playerMatches(playerId);
-			let alreadyPlayedOpponents = matches.map(match => (match.state === MatchState.Validated ? (match.p1 === playerId ? match.p2 : match.p1) : null)).filter(playerId => playerId != null);
+			let alreadyPlayedOpponents = matches.reduce((acc, match) =>
+			{
+				if (match.state === MatchState.Validated)
+				{
+					acc.push(match.p1 === playerId ? match.p2 : match.p1);
+				}
+				return acc;
+			}, []);
 			return {
 				"player": player,
 				"id": playerId,
