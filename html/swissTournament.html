@@ -74,7 +74,7 @@
 					</thead>
 					<tbody>
 						<tr style="cursor:pointer" ng-repeat="(playerIndex, score) in ctrl.allScores[ctrl.selectedRound]" ng-click="ctrl.toggleSelectPlayer(score.playerId)" ng-class="{'bg-info':(ctrl.selectedPlayerId == score.playerId), 'bg-success':(ctrl.playerMatchesWinDiff(ctrl.selectedPlayerId, score.playerId, ctrl.selectedRound) > 0), 'bg-danger':(ctrl.playerMatchesWinDiff(ctrl.selectedPlayerId, score.playerId, ctrl.selectedRound) < 0), 'bg-warning':(ctrl.playerMatchesWinDiff(ctrl.selectedPlayerId, score.playerId, ctrl.selectedRound) === 0)}">
-							<td class="text-center align-middle">{{playerIndex + 1}}</td>
+							<td class="text-center align-middle"><span ng-show="!ctrl.isCurrentRound() || ctrl.currentRoundScoresEntered()">{{playerIndex + 1}}</span></td>
 							<th class="text-left">
 								{{score.player.name}}
 							</th>

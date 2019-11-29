@@ -506,6 +506,8 @@ export class SwissTournamentController
 
 			// Sort
 
+			const finalSorting = !this.isCurrentRound() || this.currentRoundScoresEntered();
+
 			scores.sort((score1, score2) =>
 			{
 				// Match points DESC
@@ -514,22 +516,27 @@ export class SwissTournamentController
 					return (score2.matchPoints - score1.matchPoints);
 				}
 
-				// Tie breaker 1 DESC
-				if (score1.opponentMatchWinPercent != score2.opponentMatchWinPercent)
+				if (!finalSorting)
 				{
-					return (score2.opponentMatchWinPercent - score1.opponentMatchWinPercent);
+					return score1.player.name.localeCompare(score2.player.name);
+				}
+
+				// Tie breaker 1 DESC
+				if (score1.opponentMatchWinPercent.toFixed(10) != score2.opponentMatchWinPercent.toFixed(10))
+				{
+					return (score2.opponentMatchWinPercent.toFixed(10) - score1.opponentMatchWinPercent.toFixed(10));
 				}
 
 				// Tie breaker 2 DESC
-				if (score1.gameWinPercent != score2.gameWinPercent)
+				if (score1.gameWinPercent.toFixed(10) != score2.gameWinPercent.toFixed(10))
 				{
-					return (score2.gameWinPercent - score1.gameWinPercent);
+					return (score2.gameWinPercent.toFixed(10) - score1.gameWinPercent.toFixed(10));
 				}
 
 				// Tie breaker 3 DESC
-				if (score1.opponentGameWinPercent != score2.opponentGameWinPercent)
+				if (score1.opponentGameWinPercent.toFixed(10) != score2.opponentGameWinPercent.toFixed(10))
 				{
-					return (score2.opponentGameWinPercent - score1.opponentGameWinPercent);
+					return (score2.opponentGameWinPercent.toFixed(10) - score1.opponentGameWinPercent.toFixed(10));
 				}
 
 				// Tie breaker 4 DESC
@@ -624,7 +631,7 @@ export class SwissTournamentController
 
 	floatDisplay(value)
 	{
-		return (value >= 0 ? (value * 100) : '');
+		return (value >= 0 ? (value * 100).toFixed(10) : '');
 	}
 
 	floatDisplayFixed(value)
@@ -633,7 +640,7 @@ export class SwissTournamentController
 		{
 			value *= 100;
 			const valueFixed = value.toFixed(2);
-			return (value == valueFixed ? (value) : valueFixed);
+			return (value == valueFixed ? value : valueFixed);
 		}
 		else
 		{
